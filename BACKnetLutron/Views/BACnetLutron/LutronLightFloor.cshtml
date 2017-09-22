@@ -1,0 +1,111 @@
+﻿
+@{
+    ViewBag.Title = "LutronLightFloorController";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<head>
+
+
+    <link href="~/Content/css/font-awesome.min.css" rel="stylesheet" />
+    <link href="~/Content/css/jquery-confirm.css" rel="stylesheet" />
+
+    <link href="~/Content/css/Site.css" rel="stylesheet" />
+    <link href="~/Content/css/bootstrap-slider.min.css" rel="stylesheet" />
+    <link href="~/Content/css/RangeSlidar.css" rel="stylesheet" />
+    <link href="~/Content/css/LutronLightFloor.css" rel="stylesheet" />
+
+</head>
+<html>
+
+
+<body>
+    <h2>LutronLightFloor</h2>
+    <div class="col-sm-12">
+
+        <div class="container col-sm-7">
+            <div id="floorHtml">
+            </div>
+        </div>
+
+        <div class="col-sm-2" id="floorlight">
+
+        </div>
+    </div>
+
+    <div class="col-sm-12">
+        <div class="col-sm-6">
+
+            <div>
+                <label class=" col-sm-3">
+                    Light Sense
+                </label>
+                <select class="form-control col-sm-3" id="ddlfloor"></select>
+            </div>
+
+            <div class="col-sm-9">
+                <div class="range-slider">
+                    <input class="range-slider__range" type="range" id="floorSlidar" value="0" min="0" max="100" disabled="disabled">
+                    <span class="range-slider__value">0</span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div>
+            <div class="col-sm-4 ml78px">
+                <div class="col-sm-4" id="rbnLightHtml">
+
+                </div>
+                <div class="col-sm-3">
+                    <button type="button" class="form-control mtop2" id="btnOnLight">
+                        ON
+                    </button>
+                </div>
+               
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-sm-12" style="margin-top: 31%;">
+        <form data-toggle="validator" role="form" id="frmSchedule">
+            <h4>Schedule</h4>
+            <hr />
+            <div class="form-group">
+                <label for="ddlDay">Day</label>
+                <select class="form-control" name="ddlDay" id="ddlDay"  required ></select>
+            </div>
+
+            <div class="form-group ">
+                <label for="time">Time</label>
+                <input type="time" class="form-control" style="width:15% !important" step="2" name="time" id="textTime" required/>
+            </div>
+
+            <div class="form-group">
+                <label for="ddlDevice">Device</label>
+                <select class="form-control" id="ddlDevice"  name="ddlDevice" required></select>
+            </div>
+
+            <div class="form-group">
+                <label for="ddlObject">Object</label>
+                <select class="form-control" id="ddlObject"  name="ddlObject" required></select>
+            </div>
+
+            <div class="form-group ">
+                <label for="presentValue">Present Value</label>
+                <input type="number" class="form-control" style="width:25% !important" name="presentValue" id="presentValue" required/>
+            </div>
+           
+            <button type="submit" class="btn btn-primary"  id="btnSchedule">Schedule</button>
+        </form>
+    </div>
+</body>
+
+</html>
+<script src="~/Scripts/bootstrap.min.js"></script>
+<script src="~/Scripts/jquery-1.10.2.min.js"></script>
+<script src="~/Scripts/jquery.validate.min.js"></script>
+<script src="~/Scripts/jquery-confirm.js"></script>
+<script src="~/Content/Script/Pages/LutronLightFloor.js"></script>
+

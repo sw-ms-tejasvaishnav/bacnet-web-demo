@@ -1,0 +1,51 @@
+﻿.floorLable {
+    border-radius: 10px;
+    width: 27px;
+    margin-bottom: 4px;
+    
+}
+
+.bccolorwhite{
+    background-color:white;
+}
+.bccolorgray {
+    background-color: gray;
+}
+.pointernone{
+    cursor:none;
+    pointer-events:none
+}
+.colorwhite{
+    color:white;
+}
+.margin-right5 {
+    margin-right: 5px;
+}
+.mtop2{
+    margin-top:2px !important;
+}
+.ml78px {
+    margin-left: 78px !important;
+}
+.textaligncenter{
+    text-align:center !important;
+}
+.wd60 {
+    width: 60% !important;
+}
+.m-r-3{
+    margin-right:3px !important;
+}
+
+.panel-body {
+    padding: 3px;
+    padding-left: 0px;
+}
+.wd142px {
+    width: 142px !important;
+}
+
+.wd31px {
+    width: 31px;
+}
+
