@@ -84,9 +84,11 @@ namespace BACKnetLutron.Services
                 {
                     BacnetAddress bacnetAddress;
                     bacnetAddress = new BacnetAddress(BacnetAddressTypes.IP, deviceDetail.network_id);
-                    bacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, deviceDetail.routed_source, (ushort)deviceDetail.routed_net);
+                    bacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, deviceDetail.routed_source, 
+                        (ushort)deviceDetail.routed_net);
 
-                    BacnetValue newBacnetValue = new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, Convert.ToSingle(bacnetValue));
+                    BacnetValue newBacnetValue = new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL,
+                        Convert.ToSingle(bacnetValue));
                     BacnetValue[] writeNewBacnetValueValue = { newBacnetValue };
 
                     //Use to write property in simulator.
@@ -195,8 +197,8 @@ namespace BACKnetLutron.Services
 
 
                 IList<BacnetValue> loScheduleValues;
-                bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE, (uint)1),
-                    BacnetPropertyIds.PROP_EXCEPTION_SCHEDULE, out loScheduleValues);
+                bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE,
+                    (uint)1), BacnetPropertyIds.PROP_EXCEPTION_SCHEDULE, out loScheduleValues);
 
 
                 ICollection<BacnetPropertyValue> loBacnetPropertyValueList = new List<BacnetPropertyValue>();
@@ -205,6 +207,10 @@ namespace BACKnetLutron.Services
                 List<BacnetValue> loBacnetValue = new List<BacnetValue>();
 
                 #region Set Schedule
+                ////    Create new instance id based on largest available
+                //if(liTopInstanceID)
+                firstInstanceId = firstInstanceId != null ? firstInstanceId + 1 : 1;
+
                 loBacnetPropertyValueList = SetScheduleDetail(scheduleDetail, loBacnetPropertyValueList, firstInstanceId,
                     loBacnetValue, loNewPropertyValue);
                 #endregion
@@ -227,7 +233,8 @@ namespace BACKnetLutron.Services
                 #endregion
 
 
-                bacNetClient.CreateObjectRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE, (uint)firstInstanceId), loBacnetPropertyValueList);
+                bacNetClient.CreateObjectRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE,
+                    (uint)firstInstanceId), loBacnetPropertyValueList);
             }
         }
 
@@ -296,13 +303,15 @@ namespace BACKnetLutron.Services
                 foreach (var deviceDetail in bacNetDeviceModel.BACnetDeviceList)
                 {
                     IList<BacnetValue> objValueLst;
-                    bacNetClient.ReadPropertyRequest(deviceDetail.BacNetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_DEVICE, deviceDetail.DeviceId),
+                    bacNetClient.ReadPropertyRequest(deviceDetail.BacNetAddress,
+                        new BacnetObjectId(BacnetObjectTypes.OBJECT_DEVICE, deviceDetail.DeviceId),
                         BacnetPropertyIds.PROP_OBJECT_LIST, out objValueLst);
                     foreach (var objValue in objValueLst)
                     {
                         IList<BacnetValue> objNameList;
                         bacNetClient.ReadPropertyRequest(deviceDetail.BacNetAddress,
-                            new BacnetObjectId((BacnetObjectTypes)((BacnetObjectId)objValue.Value).Type, ((BacnetObjectId)objValue.Value).Instance),
+                            new BacnetObjectId((BacnetObjectTypes)((BacnetObjectId)objValue.Value).Type, 
+                            ((BacnetObjectId)objValue.Value).Instance),
                             BacnetPropertyIds.PROP_OBJECT_NAME, out objNameList);
                         var bacNetdevice = new BACnetDevice
                         {
@@ -417,9 +426,7 @@ namespace BACKnetLutron.Services
                 ICollection<BacnetPropertyValue> bacnetPropertyValueList, int? firstInstanceId,
                 List<BacnetValue> bacnetValue, BacnetPropertyValue newPropertyValue)
         {
-            ////    Create new instance id based on largest available
-            //if(liTopInstanceID)
-            firstInstanceId = firstInstanceId != null ? firstInstanceId + 1 : 1;
+           
 
             //// Set schedule object name
             bacnetValue = new List<BacnetValue>();
@@ -490,7 +497,7 @@ namespace BACKnetLutron.Services
         /// <summary>
         /// Updated schedule weekly object detail.
         /// </summary>
-        /// <param name="scheduleDetail">Passe schedule info.</param>
+        /// <param name="scheduleDetail">Passes schedule info.</param>
         /// <returns>Updated schedule weekly backnet property list.</returns>
         private BacnetPropertyValue AddScheduleWeeklyDetail(ScheduleEntity scheduleDetail)
         {
@@ -539,7 +546,8 @@ namespace BACKnetLutron.Services
 
             loBacnetWeeklyExceptionSchedule.loExceptionScheduleArray = new List<ExceptionScheduleArray>[1];
             loBacnetWeeklyExceptionSchedule.loExceptionScheduleArray[0] = new List<ExceptionScheduleArray>();
-            loBacnetWeeklyExceptionSchedule.loExceptionScheduleArray[0].Add(new ExceptionScheduleArray(new DateTime(1, 1, 1, 18, 30, 1), loExceptionSchedulTimeValue));
+            loBacnetWeeklyExceptionSchedule.loExceptionScheduleArray[0].Add(new ExceptionScheduleArray(new DateTime(1, 1, 1, 18, 30, 1),
+                loExceptionSchedulTimeValue));
 
             loBacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_SPECIAL_EVENT, loBacnetWeeklyExceptionSchedule));
 
@@ -582,7 +590,7 @@ namespace BACKnetLutron.Services
             }
             return floorLst;
         }
-        
+
         /// <summary>
         /// Read current binary presant value.
         /// </summary>
@@ -604,7 +612,7 @@ namespace BACKnetLutron.Services
             }
             return false;
         }
-        
+
         #endregion
 
     }

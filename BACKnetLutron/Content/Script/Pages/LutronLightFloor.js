@@ -49,7 +49,7 @@ $(document).ready(function () {
                 ddlDay: {
                     required: true
                 },
-                textTime: {
+                time: {
                     required: true
                 },
                 ddlDevice:{
@@ -66,7 +66,7 @@ $(document).ready(function () {
                 ddlDay: {
                     required: "Please select Schedule Day."
                 },
-                textTime: {
+                time: {
                     required: "Please enter Schedule Time."
                 },
                 ddlDevice: {
@@ -387,6 +387,14 @@ function SaveSchedule() {
     $.post("api/LutronLightFloor/SaveSchedule", objSchedule, function (data) {
 
     }).success(function () {
-
+        ClearScheduleForm();
     });
+}
+
+function ClearScheduleForm() {
+    $("#ddlDay").val("");
+    $("#textTime").val("");
+    $("#ddlDevice").val("");
+    $("#ddlObject").val("");
+    $("#presentValue").val("");
 }
