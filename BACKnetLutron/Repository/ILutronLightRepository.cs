@@ -97,6 +97,14 @@ namespace BACKnetLutron.Repository
         /// <param name="deviceId">Passes deviceId.</param>
         /// <returns>Schedule object.</returns>
         List<ScheduleObjectListEntity> GetsScheduleObjectList(int deviceId);
+
+
+
+        List<BACnetDevice> GetsLstCurrentBinaryValue(int deviceId);
+
+        BACnetDevice GetsCurrentBinaryValueByInstance(int deviceId, int instanceId);
+
+        bool CheckIfExistNetworkAddress(string networkIp);
     }
 
 }

@@ -237,6 +237,32 @@ namespace BACKnetLutron.Repository
             return scheduleObjList;
         }
 
+        public List<BACnetDevice> GetsLstCurrentBinaryValue(int deviceId)
+        {
+            var objName = Enum.GetName(typeof(LutronFloorObjectType), LutronFloorObjectType.OBJECT_BINARY_VALUE).ToString();
+            var bacnetDeviceDetail = dbContext.BACnetDevices
+                                        .Where(x => x.device_id == deviceId
+                                              && x.object_type.ToUpper() == objName)
+                                         .Select(x => x).Distinct().ToList();
+            return bacnetDeviceDetail;
+        }
 
+
+        public BACnetDevice GetsCurrentBinaryValueByInstance(int deviceId,int instanceId)
+        {
+            var objName = Enum.GetName(typeof(LutronFloorObjectType), LutronFloorObjectType.OBJECT_BINARY_VALUE).ToString();
+            var bacnetDeviceDetail = dbContext.BACnetDevices
+                                        .Where(x => x.device_id == deviceId && x.object_instance == instanceId
+                                              && x.object_type.ToUpper() == objName)
+                                         .Select(x => x).FirstOrDefault();
+            return bacnetDeviceDetail;
+        }
+
+
+        public bool CheckIfExistNetworkAddress(string networkIp)
+        {
+            var isExist = dbContext.BACnetDevices.Where(x => x.network_id == networkIp).Any();
+            return isExist;
+        }
     }
 }

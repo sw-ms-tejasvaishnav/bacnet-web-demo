@@ -21,14 +21,14 @@ $(document).ready(function () {
 
 
     $("#btnOnLight").click(function () {
-        var isChecked = RadioBtnCheckedOrNot();
-        if (isChecked == true) {
-            var deviceId = GetDeviceIdByRbnBtnSetColor();
-            SetLightsSimulator(deviceId);
-        }
-        else {
-            alert("Please select light.")
-        }
+        //var isChecked = RadioBtnCheckedOrNot();
+        //if (isChecked == true) {
+        //    var deviceId = GetDeviceIdByRbnBtnSetColor();
+        //    SetLightsSimulator(deviceId);
+        //}
+        //else {
+        //    alert("Please select light.")
+        //}
     });
 
     $('#ddlDevice').on('change', function () {
@@ -52,8 +52,8 @@ $(document).ready(function () {
                 time: {
                     required: true
                 },
-                ddlDevice:{
-                    required: true      
+                ddlDevice: {
+                    required: true
                 },
                 ddlObject: {
                     required: true
@@ -80,13 +80,13 @@ $(document).ready(function () {
                 }
             },
             submitHandler: function (form) {
-                //debugger;
+                //
                 SaveSchedule();
             }
         });
 
     $('#btnSchedule').on('click', function () {
-     
+
 
     });
 
@@ -137,9 +137,14 @@ function BindAllDropDownList() {
         for (var i = 0; i < floorDetail.length; i++) {
             if (i > 0) {
                 floorhtml += "&nbsp;";
+                floorLightHtml += "&nbsp;";
             }
             floorhtml += "<div class='panel panel-warning col-sm-3 margin-right5'><h4 class='panel-heading bccolorwhite'>"
                 + floorDetail[i].FloorName + "</h4>";
+
+            floorLightHtml += "<div class='panel panel-warning col-sm-4 margin-right5'><h4 class='panel-heading bccolorwhite'>"
+                + floorDetail[i].FloorName + "</h4>";
+
             var buttonInstanceHtml = "";
             var instance = 1;
             for (var j = 0; j < floorDetail[i].NoOfInstance; j++) {
@@ -155,22 +160,35 @@ function BindAllDropDownList() {
                 floorhtml += "</div>";
             }
 
-            for (var k = 0; k < floorDetail[i].BinaryInputCount; k++) {
-                floorLightHtml += "<div><label class='colorwhite form-control bccolorgray textaligncenter' id='floorLight"
-                    + floorDetail[i].FloorId + "'><i class='fa fa-lightbulb-o' aria-hidden='true' id='floorIcon" +
-                    floorDetail[i].FloorId + "'></i> &nbsp; Light " + binaryInput + "</label></div> ";
+            var lightFloorWiseHtml = "";
+            var lightInstance = 1;
+            for (var k = 0; k < floorDetail[i].BinaryDetails.length; k++) {
+                var currentStatus = floorDetail[i].BinaryDetails[k].LightStatus;
+                var deviceId = floorDetail[i].FloorId;
+                var instanceId = floorDetail[i].BinaryDetails[k].InstanceId;
+                var id = deviceId +""+ instanceId;
 
-                binaryInput++;
+                if (currentStatus == false) {
+                    lightFloorWiseHtml += "<span><i class='fa fa-lightbulb-o fa-2x clrBlack'  aria-hidden='true' onclick='SetLightsSimulator(" +
+                        deviceId + "," + instanceId + ")' id='floorIcon" + id + "'></i></span> ";
+                    
+                }
+                else
+                {
+                    lightFloorWiseHtml += "<span><i class='fa fa-lightbulb-o fa-2x clryellow'  aria-hidden='true' onclick='SetLightsSimulator(" +
+                        deviceId + "," + instanceId + ")' id='floorIcon" + id + "'></i></span> ";
+                }
+                lightInstance++;
             }
-
+            if (lightFloorWiseHtml != "") {
+                floorLightHtml += "<div class='panel-body wd120px'>" + lightFloorWiseHtml + "</div></div>";
+            }
+            
         }
         $("#floorHtml").html(floorhtml);
         $("#floorlight").html(floorLightHtml);
 
-        BindLightsBaseOnFloor();
-
-    }).done(function () {
-
+      //  BindLightsBaseOnFloor();
 
     });
 }
@@ -318,11 +336,11 @@ function RadioBtnCheckedOrNot() {
 }
 
 //Sets binary presant value in simulator.
-function SetLightsSimulator(deviceId) {
-    $.post("api/LutronLightFloor/SetLightsSimulator/" + deviceId, function (data) {
+function SetLightsSimulator(deviceId, instanceId) {
+    $.post("api/LutronLightFloor/SetLightsSimulator/" + deviceId + "/" + instanceId, function (data) {
         var isTrue = data;
     }).success(function (isTrue) {
-        SetOnOffTextHtml(isTrue, deviceId);
+        SetOnOffTextHtml(isTrue,deviceId, instanceId);
     });
 }
 
@@ -340,16 +358,21 @@ function GetsCurrentStatusOfLight(deviceId) {
 }
 
 //sets on and off base on simulator presant value status.
-function SetOnOffTextHtml(isTrue, deviceId) {
+function SetOnOffTextHtml(isTrue, deviceId, instanceId) {
+    var id = deviceId + "" + instanceId;
     if (isTrue == true) {
-        $("#floorIcon" + deviceId).css('color', 'yellow');
-        $("#floorLight" + deviceId).css('background-color', 'darkgreen');
-        $("#btnOnLight").html("Off");
+        $("#floorIcon" + id).removeClass('clrBlack');
+        $("#floorIcon" + id).addClass('clryellow');
+
+        //$("#floorLight" + instanceId).css('background-color', 'darkgreen');
+     //   $("#btnOnLight").html("Off");
     }
     else if (isTrue == false) {
-        $("#floorLight" + deviceId).css('background-color', 'gray');
-        $("#floorIcon" + deviceId).css('color', 'white');
-        $("#btnOnLight").html("On");
+        //    $("#floorLight" + deviceId).css('background-color', 'gray');
+        $("#floorIcon" + id).removeClass('clryellow');
+       // $("#floorIcon" + id).addClass('clrBlack');
+      
+      //  $("#btnOnLight").html("On");
     }
 }
 

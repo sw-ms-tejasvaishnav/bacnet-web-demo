@@ -219,6 +219,7 @@
     <Compile Include="BusinessEntities\DeviceEntity.cs" />
     <Compile Include="BusinessEntities\FloorEntity.cs" />
     <Compile Include="BusinessEntities\FloorType.cs" />
+    <Compile Include="BusinessEntities\LightsfloorEntity.cs" />
     <Compile Include="BusinessEntities\LutronFloorObjectType.cs" />
     <Compile Include="BusinessEntities\LutronObjectType.cs" />
     <Compile Include="BusinessEntities\ObjectInstanceType.cs" />

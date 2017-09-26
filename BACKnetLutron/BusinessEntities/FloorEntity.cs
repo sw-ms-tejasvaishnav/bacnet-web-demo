@@ -16,7 +16,7 @@ namespace BACKnetLutron.BusinessEntities
 
         public int NoOfInstance { get; set; }
 
-        public int BinaryInputCount { get; set; }
+        public List<LightsfloorEntity> BinaryDetails { get; set; }
 
 
     }

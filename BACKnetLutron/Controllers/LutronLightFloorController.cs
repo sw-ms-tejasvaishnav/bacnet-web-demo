@@ -117,10 +117,10 @@ namespace BACKnetLutron.Controllers
         /// <param name="deviceId">Passes device id.</param>
         /// <returns></returns>
         [HttpPost]
-        [Route("SetLightsSimulator/{deviceId:int}")]
-        public IHttpActionResult SetLightsSimulator(int deviceId)
+        [Route("SetLightsSimulator/{deviceId:int}/{instanceId:int}")]
+        public IHttpActionResult SetLightsSimulator(int deviceId,int instanceId)
         {
-            var currentStatus=_LutronLightFloorServices.SetLightSimulator(deviceId);
+            var currentStatus=_LutronLightFloorServices.SetLightSimulator(deviceId, instanceId);
             return Ok(currentStatus);
         }
 

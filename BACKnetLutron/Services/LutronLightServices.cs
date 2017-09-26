@@ -8,6 +8,7 @@ using System.Threading;
 using BACKnetLutron.DataModal;
 using BACKnetLutron.Repository;
 using System.IO.BACnet.Serialize;
+using BACKnetLutron.BusinessEntities.Common_Constant;
 
 namespace BACKnetLutron.Services
 {
@@ -40,10 +41,7 @@ namespace BACKnetLutron.Services
 
             //// Bacnet on UDP/IP/Ethernet
             bacNetClient = new BacnetClient(new BacnetIpUdpProtocolTransport(47808, false));// (0xBAC0, false));
-
-
             //  bacNetClient.OnWhoIs += new BacnetClient.WhoIsHandler(handler_OnWhoIs);
-
             bacNetClient.Start();    // go
             bacNetClient.WhoIs();
 
@@ -133,15 +131,15 @@ namespace BACKnetLutron.Services
         /// </summary>
         /// <param name="deviceId">Passes device id.</param>
         /// <returns>Status of binary presunt value.</returns>
-        public bool SetLightSimulator(int deviceId)
+        public bool SetLightSimulator(int deviceId, int instanceId)
         {
 
-            var bacnetDeviceDetail = _LutronLightRepository.GetsCurrentBinaryValue(deviceId);
-
+            var bacnetDeviceDetail = _LutronLightRepository.GetsCurrentBinaryValueByInstance(deviceId, instanceId);
+          
             bool currentBinaryValue = ReadCurrentBinaryPresantValue(bacnetDeviceDetail);
 
             bool binaryValueStatus = currentBinaryValue == true ? false : true;
-
+        
             TurnOnLight(deviceId, binaryValueStatus);
 
             return binaryValueStatus;
@@ -247,6 +245,7 @@ namespace BACKnetLutron.Services
         /// </summary>
         private void StartBackNetService()
         {
+            
             if (bacNetClient == null)
             {
                 bacNetClient = new BacnetClient(new BacnetIpUdpProtocolTransport(0xBAC0, false));
@@ -308,6 +307,11 @@ namespace BACKnetLutron.Services
                         BacnetPropertyIds.PROP_OBJECT_LIST, out objValueLst);
                     foreach (var objValue in objValueLst)
                     {
+                        var isExistNetworkId = _LutronLightRepository.CheckIfExistNetworkAddress(deviceDetail.BacNetAddress.ToString());
+                        if(isExistNetworkId == true)
+                        {
+                            continue;
+                        }
                         IList<BacnetValue> objNameList;
                         bacNetClient.ReadPropertyRequest(deviceDetail.BacNetAddress,
                             new BacnetObjectId((BacnetObjectTypes)((BacnetObjectId)objValue.Value).Type, 
@@ -352,7 +356,7 @@ namespace BACKnetLutron.Services
                     }
 
                 }
-
+            
                 if (bACnetDeviceLst.Count() > 0)
                 {
                     _LutronLightRepository.AddBacNetDeviceDetail(bACnetDeviceLst);
@@ -447,7 +451,6 @@ namespace BACKnetLutron.Services
 
             newPropertyValue.value = bacnetValue;
             newPropertyValue.property = new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_EFFECTIVE_PERIOD, ASN1.BACNET_ARRAY_ALL);
-
             bacnetPropertyValueList.Add(newPropertyValue);
 
             return bacnetPropertyValueList;
@@ -574,17 +577,35 @@ namespace BACKnetLutron.Services
 
                 IList<BacnetValue> objValueLst;
                 IList<BacnetValue> objBinaryLst;
-                bacNetClient.ReadPropertyRequest(deviceDetail.BacNetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_DEVICE, deviceDetail.DeviceId),
+                bacNetClient.ReadPropertyRequest(deviceDetail.BacNetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_DEVICE,
+                    deviceDetail.DeviceId),
                     BacnetPropertyIds.PROP_OBJECT_LIST, out objValueLst);
                 var binaryDeviceDetail = _LutronLightRepository.GetsCurrentBinaryValue((int)deviceDetail.DeviceId);
-                bacNetClient.ReadPropertyRequest(deviceDetail.BacNetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_BINARY_VALUE, (uint)binaryDeviceDetail.object_instance),
+                bacNetClient.ReadPropertyRequest(deviceDetail.BacNetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_BINARY_VALUE,
+                    (uint)binaryDeviceDetail.object_instance),
                BacnetPropertyIds.PROP_PRESENT_VALUE, out objBinaryLst);
+
+                var bacnetBinaryValuesByDevice = _LutronLightRepository.GetsLstCurrentBinaryValue((int)deviceDetail.DeviceId);
+
+                var binaryDetaillst = new List<LightsfloorEntity>();
+                foreach (var value in bacnetBinaryValuesByDevice)
+                {
+                    bool currentBinaryValue = ReadCurrentBinaryPresantValue(value);
+                    var binaryPresantValuesLst = new LightsfloorEntity
+                    {
+                        DeviceId = (int)deviceDetail.DeviceId,
+                        InstanceId = (int)value.object_instance,
+                        LightStatus = currentBinaryValue
+                    };
+                    binaryDetaillst.Add(binaryPresantValuesLst);
+                }
+          
                 var floorDetail = new FloorEntity
                 {
                     FloorId = (int)deviceDetail.DeviceId,
-                    FloorName = ("Floor " + deviceDetail.DeviceId).ToString(),
+                    FloorName = (CommonConstant.FloorName + deviceDetail.DeviceId).ToString(),
                     NoOfInstance = objValueLst.Count(),
-                    BinaryInputCount = objBinaryLst.Count()
+                    BinaryDetails = binaryDetaillst
                 };
                 floorLst.Add(floorDetail);
             }
@@ -603,7 +624,7 @@ namespace BACKnetLutron.Services
             BacnetAddress bacnetAddress;
             bacnetAddress = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceDetail.network_id);
             bacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceDetail.routed_source, (ushort)bacnetDeviceDetail.routed_net);
-
+     
             bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_BINARY_VALUE, (uint)bacnetDeviceDetail.object_instance),
                 BacnetPropertyIds.PROP_PRESENT_VALUE, out bacnetValueList);
             if (bacnetValueList != null && bacnetValueList.Count > 0)

@@ -43,7 +43,7 @@ namespace BACKnetLutron.Services
         /// </summary>
         /// <param name="deviceId">Passes device id.</param>
         /// <returns>Status of binary presunt value.</returns>
-        bool SetLightSimulator(int deviceId);
+        bool SetLightSimulator(int deviceId,int instanceId);
 
         /// <summary>
         /// Gets current binary presant value.

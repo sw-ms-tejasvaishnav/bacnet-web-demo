@@ -11,5 +11,6 @@ namespace BACKnetLutron.BusinessEntities.Common_Constant
         public const int liMaxLightness = 100;
         public const float ldMinLightnessCoef = 1f;
         public const float ldMaxLightnessCoef = 0.80f;
+        public const string FloorName = "Floor ";
     }
 }
