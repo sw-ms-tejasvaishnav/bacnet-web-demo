@@ -22,14 +22,14 @@
     <h2>LutronLightFloor</h2>
     <div class="col-sm-12">
 
-        <div class="container col-sm-7 panel panel-warning">
+        <div class="container col-sm-6 panel panel-warning">
             <h4 class='panel-default bccolorwhite'>Devices</h4>
             <div id="floorHtml">
             </div>
 
         </div>
 
-        <div class="container col-sm-5 panel panel-warning">
+        <div class="container col-sm-5 panel panel-warning m-l-5">
             <h4 class='panel-default bccolorwhite'>Lights</h4>
             <div id="floorlight">
             </div>
@@ -41,23 +41,26 @@
     </div>
 
     <div class="col-sm-12">
-        <div class="col-sm-6">
+        <div class="col-sm-6 p-l-5">
+            <div class="container col-sm-12 panel panel-warning ">
+                <h4 class='panel-default bccolorwhite'>Light Sense</h4>
+                <div class="panel-body">
+                    <div>
+                        <label class=" col-sm-3">
+                            Floor
+                        </label>
+                        <select class="form-control col-sm-3" id="ddlfloor"></select>
+                    </div>
 
-            <div>
-                <label class=" col-sm-3">
-                    Light Sense
-                </label>
-                <select class="form-control col-sm-3" id="ddlfloor"></select>
-            </div>
+                    <div class="col-sm-12">
+                        <div class="range-slider">
+                            Adjust Light <input class="range-slider__range" type="range" id="floorSlidar" value="0" min="0" max="100" disabled="disabled">
+                            <span class="range-slider__value">0</span>
+                        </div>
 
-            <div class="col-sm-9">
-                <div class="range-slider">
-                    <input class="range-slider__range" type="range" id="floorSlidar" value="0" min="0" max="100" disabled="disabled">
-                    <span class="range-slider__value">0</span>
+                    </div>
                 </div>
-
             </div>
-
         </div>
 
         @*<div>
@@ -76,7 +79,7 @@
 
     </div>
 
-    <div class="col-sm-12" style="margin-top: 35%;">
+    <div class="col-sm-12" style="margin-top: 28%;">
         <form data-toggle="validator" role="form" id="frmSchedule">
             <h4>Schedule</h4>
             <hr />
