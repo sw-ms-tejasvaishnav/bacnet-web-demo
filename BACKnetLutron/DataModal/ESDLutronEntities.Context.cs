@@ -29,5 +29,7 @@ namespace BACKnetLutron.DataModal
         public virtual DbSet<BACnetDevice> BACnetDevices { get; set; }
         public virtual DbSet<MsFloorType> MsFloorTypes { get; set; }
         public virtual DbSet<MsWeek> MsWeeks { get; set; }
+        public virtual DbSet<WeeklySchedule> WeeklySchedules { get; set; }
+        public virtual DbSet<ScheduleDetail> ScheduleDetails { get; set; }
     }
 }

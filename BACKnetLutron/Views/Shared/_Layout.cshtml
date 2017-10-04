@@ -6,8 +6,10 @@
     <title>@ViewBag.Title - My ASP.NET Application</title>
     
     <link href="~/Content/CSS/bootstrap.css" rel="stylesheet" />    
+    <link href="~/Content/bootstrap-datetimepicker.css" rel="stylesheet" />
+    
     <link href="~/Content/CSS/Site.css" rel="stylesheet" />
-
+    <link href="~/Content/css/datatable.css" rel="stylesheet" />
         @*@Styles.Render("~/Content/css")
             @Styles.Render(“~/Content/fontawesome”)
         @Scripts.Render("~/bundles/modernizr")*@
@@ -38,10 +40,15 @@
             <p>&copy; @DateTime.Now.Year - BACKnetLutron</p>
         </footer>*@
     </div>
-    
+    <script src="~/Scripts/moment.js"></script>
+
     <script src="~/Scripts/jquery-1.10.2.js"></script>
     <script src="~/Scripts/jquery.validate.min.js"></script>
+    <script src="~/Scripts/bootstrap-datetimepicker.js"></script>
+    <script src="~/Scripts/datatable.min.js"></script>>
     <script src="~/Scripts/bootstrap.min.js"></script>
+
+
     @*@Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)*@

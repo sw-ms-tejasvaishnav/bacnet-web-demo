@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using BACKnetLutron.DataModal;
 using BACKnetLutron.BusinessEntities;
+using AutoMapper;
 
 namespace BACKnetLutron.Repository
 {
@@ -195,7 +196,7 @@ namespace BACKnetLutron.Repository
             var instanceId = dbContext.BACnetDevices
                            .Where(x => x.device_id == deviceId
                                  && x.object_type.ToUpper() == objName)
-                           .Select(x => x.object_instance).OrderByDescending(y=>y.Value).FirstOrDefault();
+                           .Select(x => x.object_instance).OrderByDescending(y => y.Value).FirstOrDefault();
             return instanceId;
         }
 
@@ -248,7 +249,7 @@ namespace BACKnetLutron.Repository
         }
 
 
-        public BACnetDevice GetsCurrentBinaryValueByInstance(int deviceId,int instanceId)
+        public BACnetDevice GetsCurrentBinaryValueByInstance(int deviceId, int instanceId)
         {
             var objName = Enum.GetName(typeof(LutronFloorObjectType), LutronFloorObjectType.OBJECT_BINARY_VALUE).ToString();
             var bacnetDeviceDetail = dbContext.BACnetDevices
@@ -259,10 +260,138 @@ namespace BACKnetLutron.Repository
         }
 
 
-        public bool CheckIfExistNetworkAddress(string networkIp)
+        public bool CheckIfExistNetworkAddress(string networkIp, int instanceId, int deviceId, string objType)
         {
-            var isExist = dbContext.BACnetDevices.Where(x => x.network_id == networkIp).Any();
+            var isExist = dbContext.BACnetDevices.Where(x => x.network_id == networkIp && x.object_instance == instanceId
+            && x.object_type == objType && x.device_id == deviceId).Any();
             return isExist;
+        }
+
+        /// <summary>
+        /// Save schedule detail.
+        /// </summary>
+        /// <param name="scheduleInfo">Passes schedule detail.</param>
+        public void SaveScheduleDetail(ScheduleDetail scheduleInfo)
+        {
+            if (scheduleInfo != null)
+            {
+
+                dbContext.ScheduleDetails.Add(scheduleInfo);
+                dbContext.SaveChanges();
+            }
+        }
+
+        /// <summary>
+        /// Gets all schedule list and related weekly schedule.
+        /// </summary>
+        /// <returns>Schedule list.</returns>
+        public List<ScheduleEntity> ScheduleList()
+        {
+            var scheduleLst = (from sd in dbContext.ScheduleDetails
+                               where sd.IsActive == true && sd.IsDeleted == false
+                               select new ScheduleEntity
+                               {
+                                   ScheduleId = sd.ScheduleId,
+                                   DeviceId = sd.DeviceId,
+                                   IsActive = sd.IsActive,
+                                   IsDeleted = sd.IsDeleted,
+                                   ScheduleDetailId = sd.ScheduleDetailId,
+                                   InstanceId = sd.InstanceId,
+                                   DeviceName = "Device " + sd.DeviceId,
+                                   ScheduleName = sd.ScheduleName,
+                                   ScheduleEndDate=sd.ScheduleEndDate,
+                                   ScheduleStartDate = sd.ScheduleStartDate,
+                                   WeeklySchedule = (from ws in dbContext.WeeklySchedules
+                                                     join mw in dbContext.MsWeeks on
+                                                     ws.SelectedDayId equals mw.DayId
+                                                     where ws.IsActive == true && mw.isActive == true
+                                                     && mw.isDeleted == false && ws.IsDeleted == false
+                                                     && ws.ScheduleDetailId == sd.ScheduleDetailId
+                                                     select new WeeklyScheduleEntity
+                                                     {
+                                                         PresentValue = ws.PresentValue,
+                                                         SelectedDay = ws.SelectedDayId,
+                                                         SelectedTime = ws.SelectedTime,
+                                                         DayName = mw.DayName                                                         
+                                                     }).ToList()
+
+
+                               }).ToList();
+            return scheduleLst;
+
+
+        }
+
+        public BACnetDevice GetScheduleDeviceDetail(int deviceId, int instanceId)
+        {
+            var objName = Enum.GetName(typeof(LutronFloorObjectType), LutronFloorObjectType.OBJECT_SCHEDULE).ToString();
+            var bacnetDeviceDetail = dbContext.BACnetDevices
+                                       .Where(x => x.device_id == deviceId && x.object_instance == instanceId
+                                             && x.object_type.ToUpper() == objName)
+                                        .Select(x => x).FirstOrDefault();
+            return bacnetDeviceDetail;
+        }
+        /// <summary>
+        /// Gets schedule detail by device and instance id.
+        /// </summary>
+        /// <param name="deviceId">Passes device id.</param>
+        /// <param name="instanceId">Passes instance id.</param>
+        /// <returns>Schedule detail</returns>
+        public ScheduleEntity GetsScheduleDetail(int deviceId, int instanceId)
+        {
+            var scheduleLst = (from sd in dbContext.ScheduleDetails
+                               where sd.DeviceId == deviceId && sd.InstanceId == instanceId
+                               && sd.IsActive == true && sd.IsDeleted == false
+                               select new ScheduleEntity
+                               {
+                                   ScheduleDetailId = sd.ScheduleDetailId,
+                                   ScheduleId = sd.ScheduleId,
+                                   DeviceId = sd.DeviceId,
+                                   //PresentValue = sd.PresentValue,
+                                   //SelectedDay = sd.SelectedDayId,
+                                   //SelectedTime = sd.SelectedTime,
+                                   InstanceId = sd.InstanceId
+                               }).FirstOrDefault();
+            return scheduleLst;
+        }
+
+        /// <summary>
+        /// Gets schedule detail by schedule id.
+        /// </summary>
+        /// <param name="scheduleDetailId">Passes schedule detail id.</param>
+        /// <returns>Schedule detail.</returns>
+        public ScheduleDetail GetScheduleDetailById(int scheduleDetailId)
+        {
+            var scheduleDetail = dbContext.ScheduleDetails.Where(x => x.ScheduleDetailId == scheduleDetailId &&
+            x.IsActive == true && x.IsDeleted == false).FirstOrDefault();
+            return scheduleDetail;
+
+        }
+
+
+
+
+        public List<WeeklyScheduleEntity> GetWeeklyScheduleDetailById(int scheduleDetailId)
+        {
+            var scheduleDetail = dbContext.WeeklySchedules.Where(x => x.ScheduleDetailId == scheduleDetailId &&
+            x.IsActive == true && x.IsDeleted == false).Select(y=>new WeeklyScheduleEntity
+            {
+                SelectedDayId = y.SelectedDayId,
+                SelectedTime = y.SelectedTime,
+                PresentValue = y.PresentValue
+            }).ToList();
+            return scheduleDetail;
+
+        }
+
+        public void UpdateScheduleDetail(ScheduleDetail scheduleInfo)
+        {
+            if (scheduleInfo != null)
+            {
+                
+                dbContext.Entry(scheduleInfo).State = System.Data.Entity.EntityState.Modified;                
+                dbContext.SaveChanges();
+            }
         }
     }
 }

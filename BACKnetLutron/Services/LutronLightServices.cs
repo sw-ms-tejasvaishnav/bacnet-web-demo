@@ -9,6 +9,8 @@ using BACKnetLutron.DataModal;
 using BACKnetLutron.Repository;
 using System.IO.BACnet.Serialize;
 using BACKnetLutron.BusinessEntities.Common_Constant;
+using AutoMapper;
+using static System.IO.BACnet.BacnetClient;
 
 namespace BACKnetLutron.Services
 {
@@ -82,7 +84,7 @@ namespace BACKnetLutron.Services
                 {
                     BacnetAddress bacnetAddress;
                     bacnetAddress = new BacnetAddress(BacnetAddressTypes.IP, deviceDetail.network_id);
-                    bacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, deviceDetail.routed_source, 
+                    bacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, deviceDetail.routed_source,
                         (ushort)deviceDetail.routed_net);
 
                     BacnetValue newBacnetValue = new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL,
@@ -135,11 +137,11 @@ namespace BACKnetLutron.Services
         {
 
             var bacnetDeviceDetail = _LutronLightRepository.GetsCurrentBinaryValueByInstance(deviceId, instanceId);
-          
+
             bool currentBinaryValue = ReadCurrentBinaryPresantValue(bacnetDeviceDetail);
 
             bool binaryValueStatus = currentBinaryValue == true ? false : true;
-        
+
             TurnOnLight(deviceId, binaryValueStatus);
 
             return binaryValueStatus;
@@ -182,9 +184,9 @@ namespace BACKnetLutron.Services
         /// Saves schedule detail.
         /// </summary>
         /// <param name="scheduleDetail">Passes schedule detail.</param>
-        public void SaveSchedule(ScheduleEntity scheduleDetail)
+        public void SaveSchedule(WeeklyScheduleEntity scheduleDetail)
         {
-            if (scheduleDetail != null)
+            if (scheduleDetail != null && scheduleDetail.ScheduleDetailId == 0)
             {
                 var bacnetDeviceobjDetail = _LutronLightRepository.GetBacNetDeviceObjDetail(scheduleDetail.DeviceId);
                 var firstInstanceId = _LutronLightRepository.GetBacNetSceduleObjDetail(scheduleDetail.DeviceId);
@@ -203,7 +205,7 @@ namespace BACKnetLutron.Services
 
                 BacnetPropertyValue loNewPropertyValue = new BacnetPropertyValue();
                 List<BacnetValue> loBacnetValue = new List<BacnetValue>();
-
+                IList<BacnetValue> objValueLst;
                 #region Set Schedule
                 ////    Create new instance id based on largest available
                 //if(liTopInstanceID)
@@ -211,11 +213,18 @@ namespace BACKnetLutron.Services
 
                 loBacnetPropertyValueList = SetScheduleDetail(scheduleDetail, loBacnetPropertyValueList, firstInstanceId,
                     loBacnetValue, loNewPropertyValue);
+
+                bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE,
+               (uint)bacnetDeviceobjDetail.object_instance),
+                        BacnetPropertyIds.PROP_LIST_OF_OBJECT_PROPERTY_REFERENCES, out objValueLst);
+
+                var totalArrayInPropertyLst = objValueLst.Count() > 0 ? objValueLst.Count : 1;
                 #endregion
 
                 #region Update Schedule Object
                 //// Set object reference to update it's value with schedule object
-                var updateScheduleObjDetail = UpdateScheduleObject(scheduleDetail);
+
+                var updateScheduleObjDetail = UpdateScheduleObject(scheduleDetail, totalArrayInPropertyLst);
                 loBacnetPropertyValueList.Add(updateScheduleObjDetail);
                 #endregion
 
@@ -233,8 +242,33 @@ namespace BACKnetLutron.Services
 
                 bacNetClient.CreateObjectRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE,
                     (uint)firstInstanceId), loBacnetPropertyValueList);
+
+                //Adds schedule detail in data base.
+                SaveNewSchedule(scheduleDetail, firstInstanceId, totalArrayInPropertyLst);
+
+
             }
+            else
+            {
+                UpdateSchedule(scheduleDetail);
+            }
+
         }
+
+        public List<ScheduleEntity> ScheduleList()
+        {
+            var scheduleLst = _LutronLightRepository.ScheduleList();
+            return scheduleLst;
+        }
+
+        public ScheduleEntity GetsScheduleInfo(int deviceId, int instanceId)
+        {
+            var scheduleDetail = _LutronLightRepository.GetsScheduleDetail(deviceId, instanceId);
+
+            return scheduleDetail;
+        }
+
+    
 
         #endregion
 
@@ -245,7 +279,7 @@ namespace BACKnetLutron.Services
         /// </summary>
         private void StartBackNetService()
         {
-            
+
             if (bacNetClient == null)
             {
                 bacNetClient = new BacnetClient(new BacnetIpUdpProtocolTransport(0xBAC0, false));
@@ -307,14 +341,17 @@ namespace BACKnetLutron.Services
                         BacnetPropertyIds.PROP_OBJECT_LIST, out objValueLst);
                     foreach (var objValue in objValueLst)
                     {
-                        var isExistNetworkId = _LutronLightRepository.CheckIfExistNetworkAddress(deviceDetail.BacNetAddress.ToString());
-                        if(isExistNetworkId == true)
+
+                        var isExistNetworkId = _LutronLightRepository.CheckIfExistNetworkAddress(deviceDetail.BacNetAddress.ToString(),
+                            (int)((BacnetObjectId)objValue.Value).Instance, (int)deviceDetail.DeviceId
+                            , ((BacnetObjectId)objValue.Value).Type.ToString());
+                        if (isExistNetworkId == true)
                         {
                             continue;
                         }
                         IList<BacnetValue> objNameList;
                         bacNetClient.ReadPropertyRequest(deviceDetail.BacNetAddress,
-                            new BacnetObjectId((BacnetObjectTypes)((BacnetObjectId)objValue.Value).Type, 
+                            new BacnetObjectId((BacnetObjectTypes)((BacnetObjectId)objValue.Value).Type,
                             ((BacnetObjectId)objValue.Value).Instance),
                             BacnetPropertyIds.PROP_OBJECT_NAME, out objNameList);
                         var bacNetdevice = new BACnetDevice
@@ -356,7 +393,7 @@ namespace BACKnetLutron.Services
                     }
 
                 }
-            
+
                 if (bACnetDeviceLst.Count() > 0)
                 {
                     _LutronLightRepository.AddBacNetDeviceDetail(bACnetDeviceLst);
@@ -389,11 +426,13 @@ namespace BACKnetLutron.Services
             }
         }
 
+        #region Floor lights on/off.
         /// <summary>
         /// Sets binary value according to device.
         /// </summary>
         /// <param name="deviceId">Passes device id.</param>
         /// <param name="binaryValueStatus">Passes Binary value status.</param>
+        /// 
         public void TurnOnLight(int deviceId, bool binaryValueStatus)
         {
             var bacNetDeviceDetail = _LutronLightRepository.GetDeviceDetailByLightState(deviceId);
@@ -416,6 +455,10 @@ namespace BACKnetLutron.Services
             }
         }
 
+        #endregion
+
+
+        #region Create New Schedule Methods.
 
         /// <summary>
         /// Sets schedule detail.
@@ -426,16 +469,17 @@ namespace BACKnetLutron.Services
         /// <param name="bacnetValue">List of backnet value.</param>
         /// <param name="newPropertyValue">Set propert value.</param>
         /// <returns>Updated schedule backnet property list.</returns>
-        private ICollection<BacnetPropertyValue> SetScheduleDetail(ScheduleEntity scheduleDetail,
+        private ICollection<BacnetPropertyValue> SetScheduleDetail(WeeklyScheduleEntity scheduleDetail,
                 ICollection<BacnetPropertyValue> bacnetPropertyValueList, int? firstInstanceId,
                 List<BacnetValue> bacnetValue, BacnetPropertyValue newPropertyValue)
         {
-           
+
 
             //// Set schedule object name
             bacnetValue = new List<BacnetValue>();
             newPropertyValue = new BacnetPropertyValue();
-            bacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "Schedule" + " " + firstInstanceId));
+            bacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_CHARACTER_STRING, "Schedule" +
+                " " + firstInstanceId));
 
             newPropertyValue.value = bacnetValue;
             newPropertyValue.property = new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_OBJECT_NAME, ASN1.BACNET_ARRAY_ALL);
@@ -446,8 +490,10 @@ namespace BACKnetLutron.Services
             //// Set effective period for schedule object
             bacnetValue = new List<BacnetValue>();
             newPropertyValue = new BacnetPropertyValue();
-            bacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_DATE, DateTime.Today.AddDays(-1)));
-            bacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_DATE, DateTime.Today.AddMonths(1)));
+            bacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_DATE, 
+                scheduleDetail.ScheduleStartDate==null? DateTime.Today.AddDays(-1):scheduleDetail.ScheduleStartDate));
+            bacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_DATE,
+                    scheduleDetail.ScheduleEndDate == null ? DateTime.Today.AddMonths(1) : scheduleDetail.ScheduleEndDate));
 
             newPropertyValue.value = bacnetValue;
             newPropertyValue.property = new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_EFFECTIVE_PERIOD, ASN1.BACNET_ARRAY_ALL);
@@ -461,7 +507,7 @@ namespace BACKnetLutron.Services
         /// </summary>
         /// <param name="scheduleDetail">Passe schedule info.</param>
         /// <returns>Updated schedule backnet property list.</returns>
-        private BacnetPropertyValue UpdateScheduleObject(ScheduleEntity scheduleDetail)
+        private BacnetPropertyValue UpdateScheduleObject(WeeklyScheduleEntity scheduleDetail, int totalArrayInPropertyLst)
         {
 
             var loBacnetValue = new List<BacnetValue>();
@@ -474,20 +520,11 @@ namespace BACKnetLutron.Services
 
 
             //// Add AV 1 present value change
-            loPropertyReference.ArrayIndex = -1;
+            loPropertyReference.ArrayIndex = totalArrayInPropertyLst;
             loPropertyReference.DeviceId = new BacnetObjectId(BacnetObjectTypes.OBJECT_DEVICE, (uint)scheduleDetail.DeviceId);
-            loPropertyReference.ObjectId = new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_VALUE, (uint)scheduleDetail.ScheduleObjectid);
+            loPropertyReference.ObjectId = new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_VALUE, (uint)scheduleDetail.ScheduleId);
             loPropertyReference.PropertyId = BacnetPropertyIds.PROP_PRESENT_VALUE;
 
-            loBacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_PROPERTY_REFERENCE,
-                              loPropertyReference));
-
-            // Add AV 2 present value change
-            loPropertyReference = new BacnetDeviceObjectPropertyReference();
-            loPropertyReference.ArrayIndex = -1;
-            loPropertyReference.DeviceId = new BacnetObjectId(BacnetObjectTypes.OBJECT_DEVICE, (uint)scheduleDetail.DeviceId);
-            loPropertyReference.ObjectId = new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_VALUE, (uint)2);
-            loPropertyReference.PropertyId = BacnetPropertyIds.PROP_PRESENT_VALUE;
 
             loBacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_PROPERTY_REFERENCE,
                               loPropertyReference));
@@ -502,30 +539,29 @@ namespace BACKnetLutron.Services
         /// </summary>
         /// <param name="scheduleDetail">Passes schedule info.</param>
         /// <returns>Updated schedule weekly backnet property list.</returns>
-        private BacnetPropertyValue AddScheduleWeeklyDetail(ScheduleEntity scheduleDetail)
+        private BacnetPropertyValue AddScheduleWeeklyDetail(WeeklyScheduleEntity scheduleDetail)
         {
             var loBacnetValue = new List<BacnetValue>();
             var loNewPropertyValue = new BacnetPropertyValue();
 
             //// setup weekday to add schedule (0 = Monday, 1 = Tuesday ....., 6 = Sunday)
             BacnetWeeklySchedule loBacnetWeeklySchedule = new BacnetWeeklySchedule();
-            loBacnetWeeklySchedule.days[scheduleDetail.SelectedDay] = new List<DaySchedule>();
+            loBacnetWeeklySchedule.days[scheduleDetail.SelectedDayId] = new List<DaySchedule>();
 
             //// Schedule to update AV 1,2 at specified time
-            loBacnetWeeklySchedule.days[scheduleDetail.SelectedDay].Add(
+            loBacnetWeeklySchedule.days[scheduleDetail.SelectedDayId].Add(
                 new DaySchedule(new DateTime(1, 1, 1, Convert.ToInt32(scheduleDetail.SelectedTime.Hour),
                 Convert.ToInt32(scheduleDetail.SelectedTime.Minute), Convert.ToInt32(scheduleDetail.SelectedTime.Second)),
-                  Convert.ToSingle((new Random()).Next(100, 999))));
-
-            //// Schedule to update AV 1,2 after 5 mins of schedule
-            loBacnetWeeklySchedule.days[scheduleDetail.SelectedDay].Add(new DaySchedule(DateTime.Now.AddMinutes(1),
-                Convert.ToSingle(scheduleDetail.SchedulePresantValue)));
+                  Convert.ToSingle(scheduleDetail.PresentValue)));
 
 
             loBacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_WEEKLY_SCHEDULE, loBacnetWeeklySchedule));
 
+
             loNewPropertyValue.value = loBacnetValue;
-            loNewPropertyValue.property = new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_WEEKLY_SCHEDULE, ASN1.BACNET_ARRAY_ALL);
+
+            loNewPropertyValue.property = new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_WEEKLY_SCHEDULE,
+                ASN1.BACNET_ARRAY_ALL);
 
             return loNewPropertyValue;
         }
@@ -535,7 +571,7 @@ namespace BACKnetLutron.Services
         /// </summary>
         /// <param name="scheduleDetail">Passe schedule info.</param>
         /// <returns>Updated schedule weekly expection backnet property list.</returns>
-        private BacnetPropertyValue AddWeeklyExpectionSchedule(ScheduleEntity scheduleDetail)
+        private BacnetPropertyValue AddWeeklyExpectionSchedule(WeeklyScheduleEntity scheduleDetail)
         {
             var loBacnetValue = new List<BacnetValue>();
             var loNewPropertyValue = new BacnetPropertyValue();
@@ -549,16 +585,135 @@ namespace BACKnetLutron.Services
 
             loBacnetWeeklyExceptionSchedule.loExceptionScheduleArray = new List<ExceptionScheduleArray>[1];
             loBacnetWeeklyExceptionSchedule.loExceptionScheduleArray[0] = new List<ExceptionScheduleArray>();
-            loBacnetWeeklyExceptionSchedule.loExceptionScheduleArray[0].Add(new ExceptionScheduleArray(new DateTime(1, 1, 1, 18, 30, 1),
+            loBacnetWeeklyExceptionSchedule.loExceptionScheduleArray[0].Add(
+                new ExceptionScheduleArray(new DateTime(1, 1, 1, 18, 30, 1),
                 loExceptionSchedulTimeValue));
 
-            loBacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_SPECIAL_EVENT, loBacnetWeeklyExceptionSchedule));
+            loBacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_SPECIAL_EVENT,
+                loBacnetWeeklyExceptionSchedule));
 
             loNewPropertyValue.value = loBacnetValue;
-            loNewPropertyValue.property = new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_EXCEPTION_SCHEDULE, ASN1.BACNET_ARRAY_ALL);
+            loNewPropertyValue.property = new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_EXCEPTION_SCHEDULE,
+                ASN1.BACNET_ARRAY_ALL);
 
             return loNewPropertyValue;
         }
+
+        #endregion
+
+
+        #region Update Schedule
+
+        /// <summary>
+        /// Update weekly schedule in simulator.
+        /// </summary>
+        /// <param name="scheduleDetail">Passes new schedule info.</param>
+        /// <param name="bacnetAddress">Passes bacnet address.</param>
+        /// <param name="existingScheduleDetail">Passses existing schedule info.</param>
+        /// <param name="deviceDetail">Passes device info</param>
+        private void UpdateWeeklySchedule(WeeklyScheduleEntity scheduleDetail, BacnetAddress bacnetAddress
+            , ScheduleDetail existingScheduleDetail, BACnetDevice deviceDetail)
+        {
+            IList<BacnetValue> existingWeekalySchedule;
+            bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE,
+               (uint)deviceDetail.object_instance), BacnetPropertyIds.PROP_WEEKLY_SCHEDULE, out existingWeekalySchedule);
+
+            ICollection<BacnetPropertyValue> newBacnetPropertyList = new List<BacnetPropertyValue>();
+            BacnetWeeklySchedule weeklySchaduleData = new BacnetWeeklySchedule();
+            var weeklySchedulePropery = new BacnetPropertyValue();
+            var updatebacnetValue = new List<BacnetValue>();
+            var existingSchedule = _LutronLightRepository.GetWeeklyScheduleDetailById(existingScheduleDetail.ScheduleDetailId);
+            if(existingSchedule!= null)
+            {
+                foreach (var schedule in existingSchedule)
+                {
+                    if (weeklySchaduleData.days[schedule.SelectedDayId] == null)
+                    {
+                        weeklySchaduleData.days[schedule.SelectedDayId] = new List<DaySchedule>();
+                    }
+                    // Schedule days add.
+                    weeklySchaduleData.days[schedule.SelectedDayId].Add(
+                        new DaySchedule(Convert.ToDateTime(schedule.SelectedTime), Convert.ToSingle(schedule.PresentValue)));
+                }
+            }
+            if (weeklySchaduleData.days[scheduleDetail.SelectedDayId] == null)
+            {
+                weeklySchaduleData.days[scheduleDetail.SelectedDayId] = new List<DaySchedule>();
+            }
+            weeklySchaduleData.days[scheduleDetail.SelectedDayId].Add(
+           new DaySchedule(new DateTime(1, 1, 1, Convert.ToInt32(scheduleDetail.SelectedTime.Hour),
+           Convert.ToInt32(scheduleDetail.SelectedTime.Minute), Convert.ToInt32(scheduleDetail.SelectedTime.Second)),
+             Convert.ToSingle(scheduleDetail.PresentValue)));
+            updatebacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_WEEKLY_SCHEDULE, weeklySchaduleData));
+
+
+            weeklySchedulePropery.value = updatebacnetValue;
+            weeklySchedulePropery.property = new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_WEEKLY_SCHEDULE,
+                ASN1.BACNET_ARRAY_ALL);
+
+            var updatedProperty = AddScheduleWeeklyDetail(scheduleDetail);
+            newBacnetPropertyList.Add(weeklySchedulePropery);
+
+            //Write multiple request in one list in to the simulator.
+            bacNetClient.WritePropertyMultipleRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE,
+                (uint)scheduleDetail.InstanceId), newBacnetPropertyList, (byte)newBacnetPropertyList.Count);
+        }
+
+        /// <summary>
+        /// Update Schedule device property reference.
+        /// </summary>
+        /// <param name="scheduleDetail">Passes new schedule info.</param>
+        /// <param name="bacnetAddress">Passes bacnet address.</param>
+        /// <param name="existingScheduleDetail">Passses existing schedule info.</param>
+        /// <param name="deviceDetail">Passes device info</param>
+        private int UpdateScheduleObjectPropertyReference(WeeklyScheduleEntity scheduleDetail, BacnetAddress bacnetAddress,
+            ScheduleDetail existingScheduleDetail, BACnetDevice deviceDetail)
+        {
+            IList<BacnetValue> existingListofPropertyReferenceList;
+            ICollection<BacnetPropertyValue> newBacnetPropertyList = new List<BacnetPropertyValue>();
+            bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE,
+               (uint)deviceDetail.object_instance), BacnetPropertyIds.PROP_LIST_OF_OBJECT_PROPERTY_REFERENCES,
+               out existingListofPropertyReferenceList);
+
+            var bacnetValue = new List<BacnetValue>();
+            var updatedropertyValue = new BacnetPropertyValue();
+            int currentArrayIndex =0;
+            BacnetDeviceObjectPropertyReference bacnetDevicePReference = new BacnetDeviceObjectPropertyReference();
+            if (existingScheduleDetail != null && existingListofPropertyReferenceList.Count() > 0)
+            {
+
+                foreach (var existingProperty in existingListofPropertyReferenceList)
+                {
+                    bacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_PROPERTY_REFERENCE,
+                               existingProperty.Value));
+                }
+                 currentArrayIndex = existingListofPropertyReferenceList.Count() + 1;
+                bacnetDevicePReference.ArrayIndex = currentArrayIndex;
+                bacnetDevicePReference.DeviceId = new BacnetObjectId(BacnetObjectTypes.OBJECT_DEVICE,
+                    (uint)scheduleDetail.DeviceId);
+                bacnetDevicePReference.ObjectId = new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_VALUE,
+                    (uint)scheduleDetail.ScheduleId);
+                bacnetDevicePReference.PropertyId = BacnetPropertyIds.PROP_PRESENT_VALUE;
+
+
+                bacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_PROPERTY_REFERENCE,
+                                  bacnetDevicePReference));
+
+                updatedropertyValue.value = bacnetValue;
+                updatedropertyValue.property = new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_LIST_OF_OBJECT_PROPERTY_REFERENCES,
+                    ASN1.BACNET_ARRAY_ALL);
+
+                newBacnetPropertyList.Add(updatedropertyValue);
+                bacNetClient.WritePropertyMultipleRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE,
+               (uint)scheduleDetail.InstanceId), newBacnetPropertyList, (byte)bacnetValue.Count);
+
+
+           
+            }
+            return currentArrayIndex;
+        }
+
+        #endregion
 
 
         #endregion
@@ -599,7 +754,7 @@ namespace BACKnetLutron.Services
                     };
                     binaryDetaillst.Add(binaryPresantValuesLst);
                 }
-          
+
                 var floorDetail = new FloorEntity
                 {
                     FloorId = (int)deviceDetail.DeviceId,
@@ -623,10 +778,11 @@ namespace BACKnetLutron.Services
             IList<BacnetValue> bacnetValueList;
             BacnetAddress bacnetAddress;
             bacnetAddress = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceDetail.network_id);
-            bacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceDetail.routed_source, (ushort)bacnetDeviceDetail.routed_net);
-     
-            bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_BINARY_VALUE, (uint)bacnetDeviceDetail.object_instance),
-                BacnetPropertyIds.PROP_PRESENT_VALUE, out bacnetValueList);
+            bacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceDetail.routed_source,
+                (ushort)bacnetDeviceDetail.routed_net);
+
+            bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_BINARY_VALUE,
+                (uint)bacnetDeviceDetail.object_instance), BacnetPropertyIds.PROP_PRESENT_VALUE, out bacnetValueList);
             if (bacnetValueList != null && bacnetValueList.Count > 0)
             {
                 return currentBinaryValue = Convert.ToBoolean(Convert.ToInt32(bacnetValueList.FirstOrDefault().Value));
@@ -634,7 +790,110 @@ namespace BACKnetLutron.Services
             return false;
         }
 
+        /// <summary>
+        /// Update schedule
+        /// </summary>
+        /// <param name="scheduleDetail">Passes schedule info.</param>
+        private void UpdateSchedule(WeeklyScheduleEntity scheduleDetail)
+        {
+            var existScheduleDetail = _LutronLightRepository.GetScheduleDetailById(scheduleDetail.ScheduleDetailId);
+            var deviceDetail = _LutronLightRepository.GetScheduleDeviceDetail(scheduleDetail.DeviceId, scheduleDetail.InstanceId);
+
+            BacnetAddress bacnetAddress;
+            bacnetAddress = new BacnetAddress(BacnetAddressTypes.IP, deviceDetail.network_id);
+            bacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, deviceDetail.routed_source,
+                (ushort)deviceDetail.routed_net);
+
+            //Update weeekly schedule detail.
+            UpdateWeeklySchedule(scheduleDetail, bacnetAddress, existScheduleDetail, deviceDetail);
+
+            //Update list of object property references.
+            var currentArrayIndex = UpdateScheduleObjectPropertyReference(scheduleDetail, bacnetAddress, existScheduleDetail
+                 , deviceDetail);
+            //Update weekly schedule in data base.
+            UpdateScheduleWeekly(scheduleDetail, scheduleDetail.InstanceId, currentArrayIndex,existScheduleDetail);
+
+
+        }
+        /// <summary>
+        /// Adds new schedule.
+        /// </summary>
+        /// <param name="scheduleDetail">Passes schedule detail.</param>
+        /// <param name="firstInstanceId">Passes current instance of device. </param>
+        /// <param name="totalPropertyLst">Passes total array of list.</param>
+        private void SaveNewSchedule(WeeklyScheduleEntity scheduleDetail, int? firstInstanceId, int totalPropertyLst)
+        {
+            // var scheduleInfo= Mapper.Map<ScheduleEntity, ScheduleDetail>(scheduleDetail);
+            var scheduleInfo = new ScheduleDetail();
+            scheduleInfo.ScheduleId = scheduleDetail.ScheduleId;
+            scheduleInfo.ScheduleName = "Instance " + firstInstanceId;
+            scheduleInfo.InstanceId = firstInstanceId.Value;
+            scheduleInfo.PropertyArrayIndex = totalPropertyLst;
+            scheduleInfo.DeviceId = scheduleDetail.DeviceId;
+            scheduleInfo.ScheduleStartDate = scheduleDetail.ScheduleStartDate;
+            scheduleInfo.ScheduleEndDate = scheduleDetail.ScheduleEndDate;
+            scheduleInfo.IsActive = true;
+            scheduleInfo.IsDeleted = false;
+            scheduleInfo.DateOfEntry = DateTime.UtcNow;
+            scheduleInfo.DateOfModified = DateTime.UtcNow;
+            scheduleInfo.UserID = 1;
+            scheduleInfo.UserModified = 1;
+            var weeklySchedule = new WeeklySchedule
+            {
+                SelectedDayId = scheduleDetail.SelectedDayId,
+                SelectedTime = scheduleDetail.SelectedTime,
+                PresentValue = scheduleDetail.PresentValue,
+                IsActive = true,
+                IsDeleted = false,
+                DateOfEntry = DateTime.UtcNow,
+                DateOfModified = DateTime.UtcNow,
+                UserID = 1,
+                UserModified = 1,
+            };
+            scheduleInfo.WeeklySchedules.Add(weeklySchedule);
+            _LutronLightRepository.SaveScheduleDetail(scheduleInfo);
+        }
+
+
+        /// <summary>
+        /// Update weekly schedule detail.
+        /// </summary>
+        /// <param name="scheduleDetail">Passes schedule detail.</param>
+        /// <param name="firstInstanceId">Passes instance id.</param>
+        /// <param name="totalPropertyLst">Passes total array of property reference.</param>
+        /// <param name="existingScheduleDetail">Passes existing schedule id.</param>
+        private void UpdateScheduleWeekly(WeeklyScheduleEntity scheduleDetail, int? firstInstanceId, int totalPropertyLst,
+            ScheduleDetail existingScheduleDetail)
+        {
+            // var scheduleInfo= Mapper.Map<ScheduleEntity, ScheduleDetail>(scheduleDetail);
+
+            existingScheduleDetail.ScheduleId = scheduleDetail.ScheduleId;
+            existingScheduleDetail.ScheduleName = "Instance " + firstInstanceId;
+            existingScheduleDetail.InstanceId = firstInstanceId.Value;
+            existingScheduleDetail.PropertyArrayIndex = totalPropertyLst;
+            existingScheduleDetail.DeviceId = scheduleDetail.DeviceId;
+            existingScheduleDetail.IsActive = true;
+            existingScheduleDetail.IsDeleted = false;
+            existingScheduleDetail.DateOfModified = DateTime.UtcNow;
+            existingScheduleDetail.UserModified = 1;
+            var weeklySchedule = new WeeklySchedule
+            {
+                SelectedDayId = scheduleDetail.SelectedDayId,
+                SelectedTime = scheduleDetail.SelectedTime,
+                PresentValue = scheduleDetail.PresentValue,
+                ScheduleDetailId = scheduleDetail.ScheduleDetailId,
+                IsActive = true,
+                IsDeleted = false,
+                DateOfEntry = DateTime.UtcNow,
+                DateOfModified = DateTime.UtcNow,
+                UserID = 1,
+                UserModified = 1,
+            };
+            existingScheduleDetail.WeeklySchedules.Add(weeklySchedule);
+            _LutronLightRepository.UpdateScheduleDetail(existingScheduleDetail);
+        }
         #endregion
 
     }
+
 }

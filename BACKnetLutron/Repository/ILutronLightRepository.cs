@@ -77,7 +77,7 @@ namespace BACKnetLutron.Repository
         /// <param name="deviceId">Passes device id.</param>
         /// <returns>Bacnet device detail.</returns>
         BACnetDevice GetBacNetDeviceObjDetail(int deviceId);
-        
+
         /// <summary>
         /// Gets bacnet instance id base on schedule object type.
         /// </summary>
@@ -99,12 +99,79 @@ namespace BACKnetLutron.Repository
         List<ScheduleObjectListEntity> GetsScheduleObjectList(int deviceId);
 
 
-
+        /// <summary>
+        /// Gets current binary value by device id.
+        /// </summary>
+        /// <param name="deviceId">Passes device id.</param>
+        /// <returns></returns>
         List<BACnetDevice> GetsLstCurrentBinaryValue(int deviceId);
 
+        /// <summary>
+        /// Gets cuurent binary present value bi instance.
+        /// </summary>
+        /// <param name="deviceId">Passes device id.</param>
+        /// <param name="instanceId">Passes instance id.</param>
+        /// <returns></returns>
         BACnetDevice GetsCurrentBinaryValueByInstance(int deviceId, int instanceId);
 
-        bool CheckIfExistNetworkAddress(string networkIp);
+        /// <summary>
+        /// Chedk if current network address is exist or not in database.
+        /// </summary>
+        /// <param name="networkIp">Paasses network Id.</param>
+        /// <param name="instanceId">Passes Instance Id.</param>
+        /// <param name="deviceId">Passes device id.</param>
+        /// <param name="objType">Passes object type.</param>
+        /// <returns></returns>
+        bool CheckIfExistNetworkAddress(string networkIp, int instanceId, int deviceId, string objType);
+
+        /// <summary>
+        /// Save new schedule detail.
+        /// </summary>
+        /// <param name="scheduleInfo">Passes schedule detail.</param>
+        void SaveScheduleDetail(ScheduleDetail scheduleInfo);
+
+        /// <summary>
+        /// Gets all schedule list and related weekly schedule.
+        /// </summary>
+        /// <returns>Schedule list.</returns>
+        List<ScheduleEntity> ScheduleList();
+
+        /// <summary>
+        /// Gets schedule detail.
+        /// </summary>
+        /// <param name="deviceId">Passes deviceId.</param>
+        /// <param name="instanceId">Passes instance id.</param>
+        /// <returns></returns>
+        BACnetDevice GetScheduleDeviceDetail(int deviceId, int instanceId);
+
+        /// <summary>
+        /// Gets schedule detail by device and instance id.
+        /// </summary>
+        /// <param name="deviceId">Passes device id.</param>
+        /// <param name="instanceId">Passes instance id.</param>
+        /// <returns>Schedule detail</returns>
+        ScheduleEntity GetsScheduleDetail(int deviceId, int instanceId);
+
+        /// <summary>
+        /// Gets schedule detail by schedule id.
+        /// </summary>
+        /// <param name="scheduleDetailId">Passes schedule detail id.</param>
+        /// <returns>Schedule detail.</returns>
+        ScheduleDetail GetScheduleDetailById(int scheduleDetailId);
+
+
+        /// <summary>
+        /// Update weekly schedule detail.
+        /// </summary>
+        /// <param name="scheduleInfo">Passes weekly schedule detail.</param>
+        void UpdateScheduleDetail(ScheduleDetail scheduleInfo);
+
+        /// <summary>
+        /// Gets all weekly schedule detail by schedule detail id.
+        /// </summary>
+        /// <param name="scheduleDetailId">Passes schedule detail.</param>
+        /// <returns></returns>
+        List<WeeklyScheduleEntity> GetWeeklyScheduleDetailById(int scheduleDetailId);
     }
 
 }

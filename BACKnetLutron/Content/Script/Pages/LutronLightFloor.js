@@ -1,6 +1,21 @@
 ﻿var totalFloor = null;
+var gscheduleId = null;
+var schedulObjId = 0;
+var sInstanceId = null;
+var oTable = null;
+var scheduleDTable = null;
+var isModalPopUp = false;
+var currentDeviceIdForWeeklySchedule = 0;
+var frmNewSchedule;
+var tblCall = 0;
 $(document).ready(function () {
 
+    $('#scheduleStartDate').datetimepicker({
+        format: 'DD-MM-YYYY'
+    });
+    $('#scheduleEndDate').datetimepicker({
+        format: 'DD-MM-YYYY'
+    });
     StartBacknetProtocol();
 
     RangeSlider();
@@ -32,6 +47,7 @@ $(document).ready(function () {
     });
 
     $('#ddlDevice').on('change', function () {
+
         var selectedValue = $('#ddlDevice').val();
         if (selectedValue != 0) {
             BindScheduleObject(selectedValue);
@@ -79,17 +95,37 @@ $(document).ready(function () {
                     required: "Please enter Schedule Present Value."
                 }
             },
-            submitHandler: function (form) {
-                //
+            submitHandler: function (form) {               //
+
                 SaveSchedule();
+
             }
         });
 
-    $('#btnSchedule').on('click', function () {
 
+    $('#btnReset').on('click', function () {
+
+        schedulObjId = 0;
+        sInstanceId = null;
+        frmSchedule.resetForm();
+    });
+
+    $('#btnNewSchedule').on('click', function () {
+
+        $('#frmNewSchedule').submit();
+        return false;
 
     });
 
+    $('#btnNewReset').on('click', function () {
+
+        schedulObjId = 0;
+        sInstanceId = null;
+        frmNewSchedule.resetForm();
+        $("#addNewSchedule").modal('hide');
+        currentDeviceIdForWeeklySchedule = 0;
+        isModalPopUp = false;
+    });
 });
 
 //Start backnet service.
@@ -104,7 +140,7 @@ function StartBacknetProtocol() {
 
 ///Fills all dropdown and floor list method.
 function BindAllDropDownList() {
-    $.when(BindFloorDropDown(), BindWeekDropDown(), BindDevices()).then(function (floorLst, weekLst, devicesLst) {
+    $.when(BindFloorDropDown(), BindWeekDropDown(), BindDevices(), BindAllSchdule()).then(function (floorLst, weekLst, devicesLst, scheduleLst) {
 
         var ddlFloor = $('#ddlfloor');
         ddlFloor.append('<option value="' + 0 + '"> Please Select Floor </option>');
@@ -166,15 +202,14 @@ function BindAllDropDownList() {
                 var currentStatus = floorDetail[i].BinaryDetails[k].LightStatus;
                 var deviceId = floorDetail[i].FloorId;
                 var instanceId = floorDetail[i].BinaryDetails[k].InstanceId;
-                var id = deviceId +""+ instanceId;
+                var id = deviceId + "" + instanceId;
 
                 if (currentStatus == false) {
                     lightFloorWiseHtml += "<span><i class='fa fa-lightbulb-o fa-2x clrBlack'  aria-hidden='true' onclick='SetLightsSimulator(" +
                         deviceId + "," + instanceId + ")' id='floorIcon" + id + "'></i></span> ";
-                    
+
                 }
-                else
-                {
+                else {
                     lightFloorWiseHtml += "<span><i class='fa fa-lightbulb-o fa-2x clryellow'  aria-hidden='true' onclick='SetLightsSimulator(" +
                         deviceId + "," + instanceId + ")' id='floorIcon" + id + "'></i></span> ";
                 }
@@ -183,12 +218,14 @@ function BindAllDropDownList() {
             if (lightFloorWiseHtml != "") {
                 floorLightHtml += "<div class='panel-body wd120px'>" + lightFloorWiseHtml + "</div></div>";
             }
-            
+
         }
         $("#floorHtml").html(floorhtml);
         $("#floorlight").html(floorLightHtml);
 
-      //  BindLightsBaseOnFloor();
+
+        BindScheduleTable(scheduleLst[0]);
+        //  BindLightsBaseOnFloor();
 
     });
 }
@@ -206,6 +243,11 @@ function BindWeekDropDown() {
 //Gets device list of simulator.
 function BindDevices() {
     return $.get("api/LutronLightFloor/Devices");
+}
+
+//bind all schedule of new added in simulator.
+function BindAllSchdule() {
+    return $.get("api/LutronLightFloor/GetScheduleList");
 }
 
 ///Gets and set selected range value.
@@ -340,7 +382,7 @@ function SetLightsSimulator(deviceId, instanceId) {
     $.post("api/LutronLightFloor/SetLightsSimulator/" + deviceId + "/" + instanceId, function (data) {
         var isTrue = data;
     }).success(function (isTrue) {
-        SetOnOffTextHtml(isTrue,deviceId, instanceId);
+        SetOnOffTextHtml(isTrue, deviceId, instanceId);
     });
 }
 
@@ -365,14 +407,14 @@ function SetOnOffTextHtml(isTrue, deviceId, instanceId) {
         $("#floorIcon" + id).addClass('clryellow');
 
         //$("#floorLight" + instanceId).css('background-color', 'darkgreen');
-     //   $("#btnOnLight").html("Off");
+        //   $("#btnOnLight").html("Off");
     }
     else if (isTrue == false) {
         //    $("#floorLight" + deviceId).css('background-color', 'gray');
         $("#floorIcon" + id).removeClass('clryellow');
-       // $("#floorIcon" + id).addClass('clrBlack');
-      
-      //  $("#btnOnLight").html("On");
+        // $("#floorIcon" + id).addClass('clrBlack');
+
+        //  $("#btnOnLight").html("On");
     }
 }
 
@@ -381,13 +423,23 @@ function BindScheduleObject(deviceId) {
     $.get("api/LutronLightFloor/ScheduleObjects/" + deviceId, function (data) {
         var scheduleObjList = data;
     }).success(function (scheduleObjList) {
-        $('#ddlObject').html("");
+        var ddlobject = "";
+        if (isModalPopUp == false) {
+            ddlObject = $("#ddlObject");
+        } else {
+            ddlObject = $("#ddlNewObject");
+        }
+        ddlObject.html("");
 
-        var ddlObject = $('#ddlObject');
+        // var ddlObject = $('#ddlObject');
         ddlObject.append('<option value=""> Please Select Object </option>');
         $.each(scheduleObjList, function (key, value) {
             ddlObject.append('<option value="' + value.ObjectInstance + '">' + value.ObjectName + '</option>');
         });
+
+        if (schedulObjId != 0) {
+            ddlObject.val(schedulObjId);
+        }
     });
 }
 
@@ -398,26 +450,340 @@ function SaveSchedule() {
     var selectedDevice = $("#ddlDevice").val();
     var selectedScheduleObj = $("#ddlObject").val();
     var presentValue = $("#presentValue").val();
-
+    var scheduleStartDate = $("#scheduleStartDate").val();
+    var scheduleEndDate = $("#scheduleEndDate").val();
+    
     var objSchedule = {
-        SelectedDay: selectedDay,
+        SelectedDayId: selectedDay,
         SelectedTime: selectedTime,
         DeviceId: selectedDevice,
-        ScheduleObjectid: selectedScheduleObj,
-        SchedulePresantValue: presentValue
+        ScheduleId: selectedScheduleObj,
+        PresentValue: presentValue,
+        ScheduleDetailId: gscheduleId,
+        InstanceId: sInstanceId,
+        ScheduleStartDate: scheduleStartDate,
+        ScheduleEndDate: scheduleEndDate,
     }
 
     $.post("api/LutronLightFloor/SaveSchedule", objSchedule, function (data) {
 
     }).success(function () {
         ClearScheduleForm();
+        BindSchduleLstSave();
     });
 }
 
+//Bind data table of schedule on add new schedule. 
+function BindSchduleLstSave() {
+    $.get("api/LutronLightFloor/GetScheduleList", function (scheduleLst) {
+        var schedule = scheduleLst;
+    }).success(function (schedule) {
+        BindScheduleTable(schedule);
+    });
+}
+
+//sclear schedule form.
 function ClearScheduleForm() {
     $("#ddlDay").val("");
     $("#textTime").val("");
     $("#ddlDevice").val("");
     $("#ddlObject").val("");
     $("#presentValue").val("");
+}
+
+//Clear model popup for adding weekly schedule.
+function ClearModalPopWeeklySchedule() {
+    $("#ddlNewDay").val("");
+    $("#textNewTime").val("");
+    $("#ddlNewDevice").val("");
+    $("#ddlNewObject").val("");
+    $("#presentNewValue").val("");
+
+    frmNewSchedule.resetForm();
+}
+
+//Data table for schedule.
+function BindScheduleTable(scheduleLst) {
+
+    if (scheduleLst.length > 0) {
+        if (oTable != null) {
+            oTable.clear().destroy();
+        }
+        $("#scheduleListShow").show();
+        $("#norecords").hide();
+        oTable = $('#scheduleRecords').DataTable({
+            "data": scheduleLst,
+            "columns": [
+                {
+                    "className": 'details-control', "orderable": false, "defaultContent": ''
+
+                },
+                {
+                    "title": "Device", "data": "DeviceName", "sort": true, "Width": "5%"
+                },
+                {
+                    "title": "Name", "data": "ScheduleName", "sort": true, "Width": "8%"
+                },
+                {
+                    "title": "End Date", "data": "ScheduleStartDate", "sort": true, "Width": "8%", "render": function (data, type, row) {
+                        return GetDay(data);
+                    }
+                },
+                {
+                    "title": "Start Date", "data": "ScheduleEndDate", "sort": true, "Width": "8%", "render": function (data, type, row) {
+                        return GetDay(data);
+                    }
+
+                },
+                {
+                    "title": "Action", "data": "", "sort": true, "Width": "5%", "render": function (data, type, row) {
+
+                        return '<button class="btn btn-sm" onclick=GetsScheduleInfo(' + row.DeviceId + "," + row.InstanceId + ')>Add Schedule</button>';
+
+                    }
+                }
+
+
+                //{
+                //    "title": "Time", "data": "SelectedTime", "sort": true, "width": "10% ", "render": function (date) {
+                //        
+
+                //        return GetTime(date);
+                //    }
+                //},
+                //{
+                //    "title": "Value", "data": "PresentValue", "width": "15%", "className": "txtalignright",
+                //}
+            ],
+            "initComplete": function (settings, json) {
+
+                $('#scheduleRecords tbody').on('click', 'td.details-control', function (event) {
+
+
+                    var tr = $(this).closest('tr');
+                    var row = oTable.row(tr);
+
+                    if (row.child.isShown()) {
+                        // This row is already open - close it
+                        row.child.hide();
+                        tr.removeClass('shown');
+                        event.stopImmediatePropagation();
+                    }
+                    else {
+                        // Open this row
+                        var data = format(row.data(), row, tr);
+                        row.child(data).show();
+                        tr.addClass('shown');
+                        event.stopImmediatePropagation();
+
+                    }
+
+                });
+
+            }
+
+        })
+    } else {
+        $("#scheduleListShow").hide();
+        $("#norecords").show();
+    }
+
+
+}
+
+//gets only time from date.
+function GetTime(date) {
+    var dt = new Date(date);
+    var time = dt.getHours() + ":" + dt.getMinutes() + ":" + dt.getSeconds();
+    return time;
+}
+
+//Gets date in format dd/mm/yyyy
+function GetDay(date) {
+    
+    var dt = new Date(date);
+    var date = dt.getDay() + "/" + dt.getMonth() + "/" + dt.getFullYear();
+    return date;
+}
+
+//Gets schedule info base on device if and instance id.
+function GetsScheduleInfo(deviceId, instanceId) {
+    $.get("api/LutronLightFloor/GetsScheduleInfo/" + deviceId + "/" + instanceId, function (scheduleInfo) {
+
+    }).success(function (scheduleInfo) {
+        BindScheduleInfo(scheduleInfo);
+    });
+}
+
+//Fills data in schedule form.
+function BindScheduleInfo(scheduleInfo) {
+
+    //$("#ddlDay").val(scheduleInfo.SelectedDay);
+    //var dt = new Date(scheduleInfo.SelectedTime);
+    //var time = dt.getHours() + ":" + (dt.getMinutes() < 10 ? ("0" + dt.getMinutes()) : dt.getMinutes()) + ":" +
+    //    (dt.getSeconds() < 10 ? ("0" + dt.getSeconds()) : dt.getSeconds());
+    //$("#textTime").val(time);
+    //$("#ddlDevice").val(scheduleInfo.DeviceId);
+    //$("#ddlDevice").change();
+    //schedulObjId = scheduleInfo.ScheduleId;
+    //$("#presentValue").val(scheduleInfo.PresentValue);
+
+    BindModalPopUpDropDownList(scheduleInfo);
+}
+
+//gets weekly schedule near table row.
+function format(data, row, tr) {
+    // `d` is the original data object for the row
+    var table = BindScheduleDaysTable(data.WeeklySchedule);
+
+    return table
+}
+
+//Bind schedule days by schedule and append child table in perticular table row.
+function BindScheduleDaysTable(scheduleDaysLst) {
+    var dayhtml = "";
+    if (scheduleDaysLst.length > 0) {
+        dayhtml = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">';
+    }
+    var currentOrder = 1;
+    for (var i = 0; i < scheduleDaysLst.length; i++) {
+        dayhtml +=
+            '<tr><td>' + currentOrder + '</td>' +
+            '<th>Day:</th>' + '<td>' + scheduleDaysLst[i].DayName + '</td>' +
+            '<th>Time:</th>' + '<td>' + GetTime(scheduleDaysLst[i].SelectedTime) + '</td>' +
+            '<th>Value:</th>' + '<td>' + scheduleDaysLst[i].PresentValue + '</td></tr>'
+        currentOrder++;
+    }
+    if (dayhtml != "") {
+        dayhtml += '</table>';
+    }
+    else {
+        dayhtml = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">' +
+            '<tr><td>No schedule.</td></tr></table>'
+    }
+    return dayhtml;
+}
+
+
+//Validate modal pop up for weekly schedule.
+function ValidateFormModelPopup() {
+    frmNewSchedule = $('#frmNewSchedule').validate(
+        {
+            rules: {
+                ddlNewDay: {
+                    required: true
+                },
+                timeNew: {
+                    required: true
+                },
+                ddlNewObject: {
+                    required: true
+                },
+                presentNewValue: {
+                    required: true
+                },
+                scheduleStartDate: {
+                    required: true,
+                    date: true
+                },
+                scheduleEndDate: {
+                    required: true,
+                    date: true
+                }
+            },
+            messages: {
+                ddlNewDay: {
+                    required: "Please select Schedule Day."
+                },
+                timeNew: {
+                    required: "Please enter Schedule Time."
+                },
+                ddlNewObject: {
+                    required: "Please select Schedule Object."
+                },
+                presentNewValue: {
+                    required: "Please enter Schedule Present Value."
+                },
+                scheduleStartDate: {
+                    required: "Please enter Schedule Start Value."
+                },
+                scheduleEndDate: {
+                    required: "Please enter Schedule End Value."
+                }
+            },
+            submitHandler: function (form) {               //
+
+                AddNewSchedule();
+
+            }
+        });
+}
+
+//Add new weekly schedule on existing schedule.
+function AddNewSchedule() {
+    var selectedDay = $("#ddlNewDay").val();
+    var selectedTime = $("#textNewTime").val();
+    var selectedScheduleObj = $("#ddlNewObject").val();
+    var presentValue = $("#presentNewValue").val();
+
+    var objSchedule = {
+        SelectedDayId: selectedDay,
+        SelectedTime: selectedTime,
+        DeviceId: currentDeviceIdForWeeklySchedule,
+        ScheduleId: selectedScheduleObj,
+        PresentValue: presentValue,
+        ScheduleDetailId: gscheduleId,
+        InstanceId: sInstanceId
+    }
+
+    $.post("api/LutronLightFloor/SaveSchedule", objSchedule, function (data) {
+
+    }).success(function () {
+        ClearModalPopWeeklySchedule();
+        $("#addNewSchedule").modal('hide');
+        BindSchduleLstSave();
+    });
+}
+
+//Binds all dropdown of weekly schedule modal.
+function BindModalPopUpDropDownList(scheduleInfo) {
+    $.when(BindWeekDropDown()).then(function (weekLst) {
+
+        gscheduleId = scheduleInfo.ScheduleDetailId;
+        sInstanceId = scheduleInfo.InstanceId;
+        currentDeviceIdForWeeklySchedule = scheduleInfo.DeviceId;
+        $('#ddlNewDay').empty();
+        $('#ddlNewObject').empty();
+
+
+        var ddlDay = $('#ddlNewDay');
+        ddlDay.append('<option value=""> Please Select Day </option>');
+        $.each(weekLst, function (key, value) {
+            ddlDay.append('<option value="' + value.DayId + '">' + value.DayName + '</option>');
+        });
+
+        $("#addNewSchedule").modal('show');
+        $('#addNewSchedule').on('shown.bs.modal', function (e) {
+
+            ValidateFormModelPopup();
+            ClearModalPopWeeklySchedule();
+            ObjectDeviceWise(scheduleInfo.DeviceId);
+            e.stopPropagation();
+
+        })
+        isModalPopUp = true;
+
+    });
+}
+
+
+function ObjectDeviceWise(deviceId) {
+
+    if (deviceId != 0) {
+        BindScheduleObject(deviceId);
+    } else {
+        $('#ddlNewObject').html("");
+        var ddlObject = $('#ddlNewObject');
+        ddlObject.append('<option value=""> Please Select Object </option>');
+    }
 }

@@ -9,6 +9,9 @@
         <EntityTypeShape EntityType="ESD_LutronModel.BACnetDevice" Width="1.5" PointX="2.75" PointY="0.75" />
         <EntityTypeShape EntityType="ESD_LutronModel.MsFloorType" Width="1.5" PointX="5.375" PointY="0.75" />
         <EntityTypeShape EntityType="ESD_LutronModel.MsWeek" Width="1.5" PointX="8.125" PointY="0.75" />
+        <EntityTypeShape EntityType="ESD_LutronModel.WeeklySchedule" Width="1.5" PointX="3" PointY="5.25" />
+        <EntityTypeShape EntityType="ESD_LutronModel.ScheduleDetail" Width="1.5" PointX="0.75" PointY="5" />
+        <AssociationConnector Association="ESD_LutronModel.FK_WeeklySchedule_ScheduleDetail" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

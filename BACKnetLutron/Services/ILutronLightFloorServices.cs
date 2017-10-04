@@ -56,7 +56,7 @@ namespace BACKnetLutron.Services
         /// Saves schedule detail.
         /// </summary>
         /// <param name="scheduleDetail">Passes schedule detail.</param>
-        void SaveSchedule(ScheduleEntity scheduleDetail);
+        void SaveSchedule(WeeklyScheduleEntity scheduleDetail);
 
         /// <summary>
         /// Gets device list.
@@ -70,6 +70,22 @@ namespace BACKnetLutron.Services
         /// <param name="deviceId">Passes deviceId.</param>
         /// <returns>Schedule object.</returns>
         List<ScheduleObjectListEntity> GetsScheduleObjectList(int deviceId);
+
+        /// <summary>
+        /// Gets schedule list.
+        /// </summary>
+        /// <returns>Schedule list.</returns>
+        List<ScheduleEntity> ScheduleList();
+
+        /// <summary>
+        /// Gets schedule info.
+        /// </summary>
+        /// <param name="deviceId">Passes device id.</param>
+        /// <param name="instanceId">Passes instance id.</param>
+        /// <returns></returns>
+        ScheduleEntity GetsScheduleInfo(int deviceId, int instanceId);
+
+        
 
 
     }

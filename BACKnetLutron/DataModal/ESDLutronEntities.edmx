@@ -57,11 +57,64 @@
           <Property Name="UserID" Type="int" Nullable="false" />
           <Property Name="UserModified" Type="int" Nullable="false" />
         </EntityType>
+        <EntityType Name="ScheduleDetail">
+          <Key>
+            <PropertyRef Name="ScheduleDetailId" />
+          </Key>
+          <Property Name="ScheduleDetailId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="ScheduleId" Type="int" Nullable="false" />
+          <Property Name="ScheduleName" Type="varchar" MaxLength="50" Nullable="false" />
+          <Property Name="DeviceId" Type="int" Nullable="false" />
+          <Property Name="InstanceId" Type="int" Nullable="false" />
+          <Property Name="IsActive" Type="bit" Nullable="false" />
+          <Property Name="IsDeleted" Type="bit" Nullable="false" />
+          <Property Name="UserID" Type="int" Nullable="false" />
+          <Property Name="UserModified" Type="int" Nullable="false" />
+          <Property Name="DateOfEntry" Type="datetime" Nullable="false" />
+          <Property Name="DateOfModified" Type="datetime" Nullable="false" />
+          <Property Name="PropertyArrayIndex" Type="int" Nullable="false" />
+          <Property Name="ScheduleStartDate" Type="datetime" Nullable="false" />
+          <Property Name="ScheduleEndDate" Type="datetime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="WeeklySchedule">
+          <Key>
+            <PropertyRef Name="WeeklyScheduleId" />
+          </Key>
+          <Property Name="WeeklyScheduleId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="ScheduleDetailId" Type="int" Nullable="false" />
+          <Property Name="SelectedDayId" Type="int" Nullable="false" />
+          <Property Name="SelectedTime" Type="datetime" Nullable="false" />
+          <Property Name="PresentValue" Type="float" Nullable="false" />
+          <Property Name="IsActive" Type="bit" Nullable="false" />
+          <Property Name="IsDeleted" Type="bit" Nullable="false" />
+          <Property Name="UserID" Type="int" Nullable="false" />
+          <Property Name="UserModified" Type="int" Nullable="false" />
+          <Property Name="DateOfEntry" Type="datetime" Nullable="false" />
+          <Property Name="DateOfModified" Type="datetime" Nullable="false" />
+        </EntityType>
+        <Association Name="FK_WeeklySchedule_ScheduleDetail">
+          <End Role="ScheduleDetail" Type="Self.ScheduleDetail" Multiplicity="1" />
+          <End Role="WeeklySchedule" Type="Self.WeeklySchedule" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ScheduleDetail">
+              <PropertyRef Name="ScheduleDetailId" />
+            </Principal>
+            <Dependent Role="WeeklySchedule">
+              <PropertyRef Name="ScheduleDetailId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <EntityContainer Name="ESD_LutronModelStoreContainer">
           <EntitySet Name="BACnetDeviceMapping" EntityType="Self.BACnetDeviceMapping" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="BACnetDevices" EntityType="Self.BACnetDevices" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="MsFloorType" EntityType="Self.MsFloorType" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="MsWeek" EntityType="Self.MsWeek" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="ScheduleDetail" EntityType="Self.ScheduleDetail" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="WeeklySchedule" EntityType="Self.WeeklySchedule" Schema="dbo" store:Type="Tables" />
+          <AssociationSet Name="FK_WeeklySchedule_ScheduleDetail" Association="Self.FK_WeeklySchedule_ScheduleDetail">
+            <End Role="ScheduleDetail" EntitySet="ScheduleDetail" />
+            <End Role="WeeklySchedule" EntitySet="WeeklySchedule" />
+          </AssociationSet>
         </EntityContainer>
       </Schema></edmx:StorageModels>
     <!-- CSDL content -->
@@ -72,6 +125,12 @@
           <EntitySet Name="BACnetDevices" EntityType="ESD_LutronModel.BACnetDevice" />
           <EntitySet Name="MsFloorTypes" EntityType="ESD_LutronModel.MsFloorType" />
           <EntitySet Name="MsWeeks" EntityType="ESD_LutronModel.MsWeek" />
+          <EntitySet Name="WeeklySchedules" EntityType="ESD_LutronModel.WeeklySchedule" />
+          <EntitySet Name="ScheduleDetails" EntityType="ESD_LutronModel.ScheduleDetail" />
+          <AssociationSet Name="FK_WeeklySchedule_ScheduleDetail" Association="ESD_LutronModel.FK_WeeklySchedule_ScheduleDetail">
+            <End Role="ScheduleDetail" EntitySet="ScheduleDetails" />
+            <End Role="WeeklySchedule" EntitySet="WeeklySchedules" />
+          </AssociationSet>
         </EntityContainer>
         <EntityType Name="BACnetDeviceMapping">
           <Key>
@@ -125,6 +184,55 @@
           <Property Name="UserID" Type="Int32" Nullable="false" />
           <Property Name="UserModified" Type="Int32" Nullable="false" />
         </EntityType>
+        <EntityType Name="WeeklySchedule">
+          <Key>
+            <PropertyRef Name="WeeklyScheduleId" />
+          </Key>
+          <Property Name="WeeklyScheduleId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="ScheduleDetailId" Type="Int32" Nullable="false" />
+          <Property Name="SelectedDayId" Type="Int32" Nullable="false" />
+          <Property Name="SelectedTime" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="PresentValue" Type="Double" Nullable="false" />
+          <Property Name="IsActive" Type="Boolean" Nullable="false" />
+          <Property Name="IsDeleted" Type="Boolean" Nullable="false" />
+          <Property Name="UserID" Type="Int32" Nullable="false" />
+          <Property Name="UserModified" Type="Int32" Nullable="false" />
+          <Property Name="DateOfEntry" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="DateOfModified" Type="DateTime" Nullable="false" Precision="3" />
+          <NavigationProperty Name="ScheduleDetail" Relationship="ESD_LutronModel.FK_WeeklySchedule_ScheduleDetail" FromRole="WeeklySchedule" ToRole="ScheduleDetail" />
+        </EntityType>
+        <EntityType Name="ScheduleDetail">
+          <Key>
+            <PropertyRef Name="ScheduleDetailId" />
+          </Key>
+          <Property Name="ScheduleDetailId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="ScheduleId" Type="Int32" Nullable="false" />
+          <Property Name="ScheduleName" Type="String" Nullable="false" MaxLength="50" FixedLength="false" Unicode="false" />
+          <Property Name="DeviceId" Type="Int32" Nullable="false" />
+          <Property Name="InstanceId" Type="Int32" Nullable="false" />
+          <Property Name="IsActive" Type="Boolean" Nullable="false" />
+          <Property Name="IsDeleted" Type="Boolean" Nullable="false" />
+          <Property Name="UserID" Type="Int32" Nullable="false" />
+          <Property Name="UserModified" Type="Int32" Nullable="false" />
+          <Property Name="DateOfEntry" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="DateOfModified" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="PropertyArrayIndex" Type="Int32" Nullable="false" />
+          <Property Name="ScheduleStartDate" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="ScheduleEndDate" Type="DateTime" Nullable="false" Precision="3" />
+          <NavigationProperty Name="WeeklySchedules" Relationship="ESD_LutronModel.FK_WeeklySchedule_ScheduleDetail" FromRole="ScheduleDetail" ToRole="WeeklySchedule" />
+        </EntityType>
+        <Association Name="FK_WeeklySchedule_ScheduleDetail">
+          <End Type="ESD_LutronModel.ScheduleDetail" Role="ScheduleDetail" Multiplicity="1" />
+          <End Type="ESD_LutronModel.WeeklySchedule" Role="WeeklySchedule" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="ScheduleDetail">
+              <PropertyRef Name="ScheduleDetailId" />
+            </Principal>
+            <Dependent Role="WeeklySchedule">
+              <PropertyRef Name="ScheduleDetailId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -184,6 +292,43 @@
                 <ScalarProperty Name="DayName" ColumnName="DayName" />
                 <ScalarProperty Name="DayId" ColumnName="DayId" />
                 <ScalarProperty Name="Id" ColumnName="Id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="WeeklySchedules">
+            <EntityTypeMapping TypeName="ESD_LutronModel.WeeklySchedule">
+              <MappingFragment StoreEntitySet="WeeklySchedule">
+                <ScalarProperty Name="DateOfModified" ColumnName="DateOfModified" />
+                <ScalarProperty Name="DateOfEntry" ColumnName="DateOfEntry" />
+                <ScalarProperty Name="UserModified" ColumnName="UserModified" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="IsDeleted" ColumnName="IsDeleted" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="PresentValue" ColumnName="PresentValue" />
+                <ScalarProperty Name="SelectedTime" ColumnName="SelectedTime" />
+                <ScalarProperty Name="SelectedDayId" ColumnName="SelectedDayId" />
+                <ScalarProperty Name="ScheduleDetailId" ColumnName="ScheduleDetailId" />
+                <ScalarProperty Name="WeeklyScheduleId" ColumnName="WeeklyScheduleId" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ScheduleDetails">
+            <EntityTypeMapping TypeName="ESD_LutronModel.ScheduleDetail">
+              <MappingFragment StoreEntitySet="ScheduleDetail">
+                <ScalarProperty Name="ScheduleEndDate" ColumnName="ScheduleEndDate" />
+                <ScalarProperty Name="ScheduleStartDate" ColumnName="ScheduleStartDate" />
+                <ScalarProperty Name="PropertyArrayIndex" ColumnName="PropertyArrayIndex" />
+                <ScalarProperty Name="DateOfModified" ColumnName="DateOfModified" />
+                <ScalarProperty Name="DateOfEntry" ColumnName="DateOfEntry" />
+                <ScalarProperty Name="UserModified" ColumnName="UserModified" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="IsDeleted" ColumnName="IsDeleted" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="InstanceId" ColumnName="InstanceId" />
+                <ScalarProperty Name="DeviceId" ColumnName="DeviceId" />
+                <ScalarProperty Name="ScheduleName" ColumnName="ScheduleName" />
+                <ScalarProperty Name="ScheduleId" ColumnName="ScheduleId" />
+                <ScalarProperty Name="ScheduleDetailId" ColumnName="ScheduleDetailId" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>

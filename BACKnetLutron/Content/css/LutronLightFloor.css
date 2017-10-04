@@ -1,5 +1,5 @@
 ﻿.floorLable {
-    border-radius: 10px;
+    border-ra: 10px;
     width: 27px;
     margin-bottom: 4px;
     
@@ -65,3 +65,33 @@
     padding-left: 5px;
 }
 
+.txtalignright {
+    text-align: right;
+}
+
+td.details-control {
+    background: url('../Images/details_open.png') no-repeat center center !important;
+    cursor: pointer;
+    
+}
+tr.shown td.details-control {
+    background: url('../Images/details_close.png') no-repeat center center !important;
+}
+
+.displaynone{
+    display:none;
+}
+
+.modal-header .close {
+    margin-top: -25px !important;
+}
+
+.modal-backdrop {
+    position: relative;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1030;
+    background-color: #000000;
+}

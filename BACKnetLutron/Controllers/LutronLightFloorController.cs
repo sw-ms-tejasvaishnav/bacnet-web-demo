@@ -21,7 +21,7 @@ namespace BACKnetLutron.Controllers
             this._LutronLightFloorServices = LutronLightFloorServices;
         }
         #endregion
-        
+
         #region Controller Methods
 
         /// <summary>
@@ -92,9 +92,9 @@ namespace BACKnetLutron.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("SaveBackNetPresantValue/{bacnetvalue:int}/{floorId:int}")]
-        public IHttpActionResult SaveBackNetValue(int bacnetvalue,int floorId)
+        public IHttpActionResult SaveBackNetValue(int bacnetvalue, int floorId)
         {
-            _LutronLightFloorServices.SaveBackNetPresantValue(bacnetvalue,floorId);
+            _LutronLightFloorServices.SaveBackNetPresantValue(bacnetvalue, floorId);
             return Ok();
         }
 
@@ -118,9 +118,9 @@ namespace BACKnetLutron.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("SetLightsSimulator/{deviceId:int}/{instanceId:int}")]
-        public IHttpActionResult SetLightsSimulator(int deviceId,int instanceId)
+        public IHttpActionResult SetLightsSimulator(int deviceId, int instanceId)
         {
-            var currentStatus=_LutronLightFloorServices.SetLightSimulator(deviceId, instanceId);
+            var currentStatus = _LutronLightFloorServices.SetLightSimulator(deviceId, instanceId);
             return Ok(currentStatus);
         }
 
@@ -143,12 +143,42 @@ namespace BACKnetLutron.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("SaveSchedule")]
-        public IHttpActionResult SaveSchedule(ScheduleEntity scheduleDetail)
+        public IHttpActionResult SaveSchedule(WeeklyScheduleEntity scheduleDetail)
         {
+
             _LutronLightFloorServices.SaveSchedule(scheduleDetail);
+
             return Ok();
         }
 
+        /// <summary>
+        /// Gets schedule list.
+        /// </summary>
+        /// <returns>Schedule list.</returns>
+        [HttpGet]
+        [Route("GetScheduleList")]
+        public IHttpActionResult GetScheduleList()
+        {
+            var scheduleLst = _LutronLightFloorServices.ScheduleList();
+            return Ok(scheduleLst);
+        }
+
+        /// <summary>
+        /// Gets schedule info by device id and instance id.
+        /// </summary>
+        /// <param name="deviceId">Passes device id.</param>
+        /// <param name="instanceId">Passes instance id.</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetsScheduleInfo/{deviceId:int}/{instanceId:int}")]
+        public IHttpActionResult GetsScheduleInfo(int deviceId, int instanceId)
+        {
+            var scheduleInfo = _LutronLightFloorServices.GetsScheduleInfo(deviceId, instanceId);
+            return Ok(scheduleInfo);
+        }
+
+
+     
         #endregion
 
     }

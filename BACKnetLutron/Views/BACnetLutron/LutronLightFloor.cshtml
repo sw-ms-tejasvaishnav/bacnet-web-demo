@@ -4,15 +4,16 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 <head>
-
+    
 
     <link href="~/Content/css/font-awesome.min.css" rel="stylesheet" />
     <link href="~/Content/css/jquery-confirm.css" rel="stylesheet" />
-
+    <link href="~/Content/bootstrap-datetimepicker.css" rel="stylesheet" />
     <link href="~/Content/css/Site.css" rel="stylesheet" />
     <link href="~/Content/css/bootstrap-slider.min.css" rel="stylesheet" />
     <link href="~/Content/css/RangeSlidar.css" rel="stylesheet" />
     <link href="~/Content/css/LutronLightFloor.css" rel="stylesheet" />
+    <link href="~/Content/css/datatable.css" rel="stylesheet" />
 
 </head>
 <html>
@@ -34,10 +35,6 @@
             <div id="floorlight">
             </div>
         </div>
-        @*<div class="col-sm-2" id="floorlight">
-
-            </div>*@
-
     </div>
 
     <div class="col-sm-12">
@@ -63,26 +60,34 @@
             </div>
         </div>
 
-        @*<div>
-                <div class="col-sm-4 ml78px">
-                    <div class="col-sm-4" id="rbnLightHtml">
-
-                    </div>
-                    <div class="col-sm-3">
-                        <button type="button" class="form-control mtop2" id="btnOnLight">
-                            ON
-                        </button>
-                    </div>
-
-                </div>
-            </div>*@
-
     </div>
 
     <div class="col-sm-12" style="margin-top: 28%;">
-        <form data-toggle="validator" role="form" id="frmSchedule">
-            <h4>Schedule</h4>
+        <form data-toggle="validator" class="col-sm-6" role="form" id="frmSchedule">
+            <h4>Create New Schedule</h4>
             <hr />
+
+            <div class="form-group">
+                <label for="scheduleStartDate">Schedule Start Date</label>
+                <div class="input-group date" >
+              
+                    <input type="text" id="scheduleStartDate" style="width:166px" class="form-control">
+                    <span class="input-group-addon" style="float:right;width: 36px;height: 34px;">
+                        <i class="fa fa-calendar fa-2x" style="margin-left: -24px;height: 0px;width: 0px;"></i>
+                    </span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="scheduleEndDate">Schedule End Date</label>
+                <div class="input-group date" >
+
+                    <input type="text" id="scheduleEndDate" style="width:166px" class="form-control">
+                    <span class="input-group-addon" style="float:right;width: 36px;height: 34px;">
+                        <i class="fa fa-calendar fa-2x" style="margin-left: -24px;height: 0px;width: 0px;"></i>
+                    </span>
+                </div>
+            </div>
             <div class="form-group">
                 <label for="ddlDay">Day</label>
                 <select class="form-control" name="ddlDay" id="ddlDay" required></select>
@@ -90,7 +95,7 @@
 
             <div class="form-group ">
                 <label for="time">Time</label>
-                <input type="time" class="form-control" style="width:15% !important" step="2" name="time" id="textTime" required />
+                <input type="time" class="form-control" style="width:27% !important" step="2" name="time" id="textTime" required />
             </div>
 
             <div class="form-group">
@@ -109,14 +114,81 @@
             </div>
 
             <button type="submit" class="btn btn-primary" id="btnSchedule">Schedule</button>
+            <button type="reset" style="background-color:indianred;" class="btn btn-primary " id="btnReset">Reset</button>
         </form>
+        <div class="col-sm-6">
+            <h4>Schedule </h4>
+            <hr />
+            <div id="scheduleListShow">
+                <table id="scheduleRecords" class="cell-border" cellspacing="0"></table>
+            </div>
+            <div id="norecords">
+                <h4>No Schedule exist.</h4>
+            </div>
+            <table id="scheduleDaysRecords" class="cell-border displaynone" cellspacing="0"></table>
+        </div>
     </div>
+
+
+
+    <!-- Modal -->
+    <div class="modal fade" id="addNewSchedule" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="exampleModalLabel">Add Weekly Schedule</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form data-toggle="validator" class="col-sm-12" role="form" id="frmNewSchedule">
+
+                        <div class="form-group">
+                            <label for="ddlNewDay">Day</label>
+                            <select class="form-control" name="ddlNewDay" id="ddlNewDay" required></select>
+                        </div>
+
+                        <div class="form-group ">
+                            <label for="timeNew">Time</label>
+                            <input type="time" class="form-control" style="width:30% !important" step="2" name="timeNew" id="textNewTime" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ddlNewObject">Object</label>
+                            <select class="form-control" id="ddlNewObject" name="ddlNewObject" required></select>
+                        </div>
+
+                        <div class="form-group ">
+                            <label for="presentNewValue">Present Value</label>
+                            <input type="number" class="form-control" style="width:25% !important" name="presentNewValue" id="presentNewValue" required />
+                        </div>
+
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" id="btnNewSchedule">Add Weekly-Schedule</button>
+                    <button style="background-color:indianred;" class="btn btn-primary " id="btnNewReset">Cancle</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!---Modal end-->
 </body>
 
 </html>
-<script src="~/Scripts/bootstrap.min.js"></script>
+
+
 <script src="~/Scripts/jquery-1.10.2.min.js"></script>
+<script src="~/Scripts/moment.js"></script>
+<script src="~/Scripts/bootstrap.min.js"></script>
+<script src="~/Scripts/bootstrap-datetimepicker.js"></script>
 <script src="~/Scripts/jquery.validate.min.js"></script>
+<script src="~/Scripts/datatable.min.js"></script>
 <script src="~/Scripts/jquery-confirm.js"></script>
+
+
+
 <script src="~/Content/Script/Pages/LutronLightFloor.js"></script>
 
