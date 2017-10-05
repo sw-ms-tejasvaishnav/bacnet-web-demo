@@ -39,14 +39,21 @@ namespace BACKnetLutron.Services
             StartBackNetService();
             Thread.Sleep(1000);
             AddBackNetDeviceDetail();
-            bacNetClient.Dispose();
-
+           // bacNetClient.Dispose();
+           // bacNetClient.Transport.Dispose();
             //// Bacnet on UDP/IP/Ethernet
-            bacNetClient = new BacnetClient(new BacnetIpUdpProtocolTransport(47808, false));// (0xBAC0, false));
+           // bacNetClient = new BacnetClient(new BacnetIpUdpProtocolTransport(47808, false));// (0xBAC0, false));
             //  bacNetClient.OnWhoIs += new BacnetClient.WhoIsHandler(handler_OnWhoIs);
-            bacNetClient.Start();    // go
-            bacNetClient.WhoIs();
+            bacNetClient.OnReinitializedDevice += new BacnetClient.ReinitializedRequestHandler(OnReinitializedDevice);
+            
+           // bacNetClient.Start();    // go
+          //  bacNetClient.WhoIs();
 
+        }
+
+        private void OnReinitializedDevice(BacnetClient sender, BacnetAddress adr, byte invoke_id, BacnetReinitializedStates state, string password, BacnetMaxSegments max_segments)
+        {            
+            sender.SimpleAckResponse(adr, BacnetConfirmedServices.SERVICE_CONFIRMED_REINITIALIZE_DEVICE, invoke_id);
         }
 
         /// <summary>
@@ -245,7 +252,7 @@ namespace BACKnetLutron.Services
 
                 //Adds schedule detail in data base.
                 SaveNewSchedule(scheduleDetail, firstInstanceId, totalArrayInPropertyLst);
-
+                AddBackNetDeviceDetail();
 
             }
             else

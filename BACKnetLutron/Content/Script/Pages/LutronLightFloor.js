@@ -445,6 +445,7 @@ function BindScheduleObject(deviceId) {
 
 //Save schedule detail.
 function SaveSchedule() {
+    debugger;
     var selectedDay = $("#ddlDay").val();
     var selectedTime = $("#textTime").val();
     var selectedDevice = $("#ddlDevice").val();
@@ -462,7 +463,7 @@ function SaveSchedule() {
         ScheduleDetailId: gscheduleId,
         InstanceId: sInstanceId,
         ScheduleStartDate: scheduleStartDate,
-        ScheduleEndDate: scheduleEndDate,
+        ScheduleEndDate: $("#scheduleEndDate").val()
     }
 
     $.post("api/LutronLightFloor/SaveSchedule", objSchedule, function (data) {
@@ -489,6 +490,8 @@ function ClearScheduleForm() {
     $("#ddlDevice").val("");
     $("#ddlObject").val("");
     $("#presentValue").val("");
+    $("#scheduleEndDate").val("");
+    $("#scheduleStartDate").val("");
 }
 
 //Clear model popup for adding weekly schedule.
