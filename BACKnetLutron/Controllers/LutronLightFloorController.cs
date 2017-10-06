@@ -145,7 +145,22 @@ namespace BACKnetLutron.Controllers
         [Route("SaveSchedule")]
         public IHttpActionResult SaveSchedule(WeeklyScheduleEntity scheduleDetail)
         {
-
+            if (!string.IsNullOrEmpty(scheduleDetail.d1))
+            {
+                scheduleDetail.ScheduleStartDate = Convert.ToDateTime(scheduleDetail.d1);
+            }
+            else
+            {
+                scheduleDetail.ScheduleStartDate = DateTime.Today.AddDays(-1);
+            }
+            if (!string.IsNullOrEmpty(scheduleDetail.d2))
+            {
+                scheduleDetail.ScheduleEndDate = Convert.ToDateTime(scheduleDetail.d2);
+            }
+            else
+            {
+                scheduleDetail.ScheduleEndDate = DateTime.Today.AddMonths(1);
+            }
             _LutronLightFloorServices.SaveSchedule(scheduleDetail);
 
             return Ok();
@@ -178,7 +193,7 @@ namespace BACKnetLutron.Controllers
         }
 
 
-     
+
         #endregion
 
     }

@@ -22,7 +22,8 @@ namespace BACKnetLutron.BusinessEntities
         public System.DateTime SelectedTime { get; set; }
         public DateTime ScheduleStartDate { get; set; }
         public DateTime ScheduleEndDate { get; set; }
-
+        public string  d1 { get; set; }
+        public string d2 { get; set; }
         public int SelectedDay { get; set; }
         public bool IsActive { get; set; }
     }

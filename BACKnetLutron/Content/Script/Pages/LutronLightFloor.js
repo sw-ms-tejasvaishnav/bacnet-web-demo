@@ -9,13 +9,16 @@ var currentDeviceIdForWeeklySchedule = 0;
 var frmNewSchedule;
 var tblCall = 0;
 $(document).ready(function () {
-
+    debugger;
     $('#scheduleStartDate').datetimepicker({
-        format: 'DD-MM-YYYY'
+        format: 'MM-DD-YYYY'
     });
     $('#scheduleEndDate').datetimepicker({
-        format: 'DD-MM-YYYY'
+        format: 'MM-DD-YYYY'
     });
+
+
+
     StartBacknetProtocol();
 
     RangeSlider();
@@ -102,7 +105,7 @@ $(document).ready(function () {
             }
         });
 
-
+    $('#scheduleStartDate').on('change', function (e) { console.log(e.date); })
     $('#btnReset').on('click', function () {
 
         schedulObjId = 0;
@@ -453,7 +456,7 @@ function SaveSchedule() {
     var presentValue = $("#presentValue").val();
     var scheduleStartDate = $("#scheduleStartDate").val();
     var scheduleEndDate = $("#scheduleEndDate").val();
-    
+
     var objSchedule = {
         SelectedDayId: selectedDay,
         SelectedTime: selectedTime,
@@ -462,8 +465,8 @@ function SaveSchedule() {
         PresentValue: presentValue,
         ScheduleDetailId: gscheduleId,
         InstanceId: sInstanceId,
-        ScheduleStartDate: scheduleStartDate,
-        ScheduleEndDate: $("#scheduleEndDate").val()
+        d1: scheduleStartDate,
+        d2: scheduleEndDate
     }
 
     $.post("api/LutronLightFloor/SaveSchedule", objSchedule, function (data) {
@@ -603,7 +606,7 @@ function GetTime(date) {
 
 //Gets date in format dd/mm/yyyy
 function GetDay(date) {
-    
+
     var dt = new Date(date);
     var date = dt.getDay() + "/" + dt.getMonth() + "/" + dt.getFullYear();
     return date;
@@ -743,6 +746,9 @@ function AddNewSchedule() {
 
     }).success(function () {
         ClearModalPopWeeklySchedule();
+        isModalPopUp = false;
+        gscheduleId = 0;
+        sInstanceId = 0;
         $("#addNewSchedule").modal('hide');
         BindSchduleLstSave();
     });

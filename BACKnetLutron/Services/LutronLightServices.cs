@@ -39,20 +39,20 @@ namespace BACKnetLutron.Services
             StartBackNetService();
             Thread.Sleep(1000);
             AddBackNetDeviceDetail();
-           // bacNetClient.Dispose();
-           // bacNetClient.Transport.Dispose();
+            // bacNetClient.Dispose();
+            // bacNetClient.Transport.Dispose();
             //// Bacnet on UDP/IP/Ethernet
-           // bacNetClient = new BacnetClient(new BacnetIpUdpProtocolTransport(47808, false));// (0xBAC0, false));
-            //  bacNetClient.OnWhoIs += new BacnetClient.WhoIsHandler(handler_OnWhoIs);
+            // bacNetClient = new BacnetClient(new BacnetIpUdpProtocolTransport(47808, false));// (0xBAC0, false));
+
             bacNetClient.OnReinitializedDevice += new BacnetClient.ReinitializedRequestHandler(OnReinitializedDevice);
-            
-           // bacNetClient.Start();    // go
-          //  bacNetClient.WhoIs();
+
+            // bacNetClient.Start();    // go
+            //  bacNetClient.WhoIs();
 
         }
 
         private void OnReinitializedDevice(BacnetClient sender, BacnetAddress adr, byte invoke_id, BacnetReinitializedStates state, string password, BacnetMaxSegments max_segments)
-        {            
+        {
             sender.SimpleAckResponse(adr, BacnetConfirmedServices.SERVICE_CONFIRMED_REINITIALIZE_DEVICE, invoke_id);
         }
 
@@ -203,16 +203,16 @@ namespace BACKnetLutron.Services
                     (ushort)bacnetDeviceobjDetail.routed_net);
 
 
-                IList<BacnetValue> loScheduleValues;
-                bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE,
-                    (uint)1), BacnetPropertyIds.PROP_EXCEPTION_SCHEDULE, out loScheduleValues);
+                //IList<BacnetValue> loScheduleValues;
+                //bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE,
+                //    (uint)1), BacnetPropertyIds.PROP_EXCEPTION_SCHEDULE, out loScheduleValues);
 
 
                 ICollection<BacnetPropertyValue> loBacnetPropertyValueList = new List<BacnetPropertyValue>();
 
                 BacnetPropertyValue loNewPropertyValue = new BacnetPropertyValue();
                 List<BacnetValue> loBacnetValue = new List<BacnetValue>();
-                IList<BacnetValue> objValueLst;
+                //IList<BacnetValue> objValueLst;
                 #region Set Schedule
                 ////    Create new instance id based on largest available
                 //if(liTopInstanceID)
@@ -221,11 +221,11 @@ namespace BACKnetLutron.Services
                 loBacnetPropertyValueList = SetScheduleDetail(scheduleDetail, loBacnetPropertyValueList, firstInstanceId,
                     loBacnetValue, loNewPropertyValue);
 
-                bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE,
-               (uint)bacnetDeviceobjDetail.object_instance),
-                        BacnetPropertyIds.PROP_LIST_OF_OBJECT_PROPERTY_REFERENCES, out objValueLst);
+                // bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE,
+                //(uint)bacnetDeviceobjDetail.object_instance),
+                //         BacnetPropertyIds.PROP_LIST_OF_OBJECT_PROPERTY_REFERENCES, out objValueLst);
 
-                var totalArrayInPropertyLst = objValueLst.Count() > 0 ? objValueLst.Count : 1;
+                var totalArrayInPropertyLst = 1;
                 #endregion
 
                 #region Update Schedule Object
@@ -241,10 +241,10 @@ namespace BACKnetLutron.Services
                 loBacnetPropertyValueList.Add(scheduleWeekalyValue);
                 #endregion
 
-                #region Adds WeeklyExpection Detail.
-                var weeklyExpScheduleValue = AddWeeklyExpectionSchedule(scheduleDetail);
-                loBacnetPropertyValueList.Add(weeklyExpScheduleValue);
-                #endregion
+                //#region Adds WeeklyExpection Detail.
+                //var weeklyExpScheduleValue = AddWeeklyExpectionSchedule(scheduleDetail);
+                //loBacnetPropertyValueList.Add(weeklyExpScheduleValue);
+                //#endregion
 
 
                 bacNetClient.CreateObjectRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_SCHEDULE,
@@ -275,7 +275,7 @@ namespace BACKnetLutron.Services
             return scheduleDetail;
         }
 
-    
+
 
         #endregion
 
@@ -286,16 +286,24 @@ namespace BACKnetLutron.Services
         /// </summary>
         private void StartBackNetService()
         {
-
             if (bacNetClient == null)
             {
-                bacNetClient = new BacnetClient(new BacnetIpUdpProtocolTransport(0xBAC0, false));
-
-                bacNetClient.Dispose();
+                BacnetIpUdpProtocolTransport newPort = new BacnetIpUdpProtocolTransport(0xBAC0, false);
+                bacNetClient = new BacnetClient(newPort);
+                bacNetClient.OnIam += new BacnetClient.IamHandler(Handler_OmIam);
+                bacNetClient.OnWhoIs += new BacnetClient.WhoIsHandler(handler_OnWhoIs);
+                //bacNetClient.Dispose();
+                //   Thread.Sleep(1000);
                 bacNetClient.Start();
+
+
+                bacNetClient.WhoIs();
             }
-            bacNetClient.OnIam += new BacnetClient.IamHandler(Handler_OmIam);
-            bacNetClient.WhoIs();
+            else
+            {
+                bacNetClient.OnIam -= new BacnetClient.IamHandler(Handler_OmIam);
+                bacNetClient.OnWhoIs -= new BacnetClient.WhoIsHandler(handler_OnWhoIs);
+            }
         }
 
         /// <summary>
@@ -497,10 +505,10 @@ namespace BACKnetLutron.Services
             //// Set effective period for schedule object
             bacnetValue = new List<BacnetValue>();
             newPropertyValue = new BacnetPropertyValue();
-            bacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_DATE, 
-                scheduleDetail.ScheduleStartDate==null? DateTime.Today.AddDays(-1):scheduleDetail.ScheduleStartDate));
             bacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_DATE,
-                    scheduleDetail.ScheduleEndDate == null ? DateTime.Today.AddMonths(1) : scheduleDetail.ScheduleEndDate));
+                scheduleDetail.ScheduleStartDate));
+            bacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_DATE,
+                    scheduleDetail.ScheduleEndDate));
 
             newPropertyValue.value = bacnetValue;
             newPropertyValue.property = new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_EFFECTIVE_PERIOD, ASN1.BACNET_ARRAY_ALL);
@@ -630,7 +638,7 @@ namespace BACKnetLutron.Services
             var weeklySchedulePropery = new BacnetPropertyValue();
             var updatebacnetValue = new List<BacnetValue>();
             var existingSchedule = _LutronLightRepository.GetWeeklyScheduleDetailById(existingScheduleDetail.ScheduleDetailId);
-            if(existingSchedule!= null)
+            if (existingSchedule != null)
             {
                 foreach (var schedule in existingSchedule)
                 {
@@ -684,7 +692,7 @@ namespace BACKnetLutron.Services
 
             var bacnetValue = new List<BacnetValue>();
             var updatedropertyValue = new BacnetPropertyValue();
-            int currentArrayIndex =0;
+            int currentArrayIndex = 0;
             BacnetDeviceObjectPropertyReference bacnetDevicePReference = new BacnetDeviceObjectPropertyReference();
             if (existingScheduleDetail != null && existingListofPropertyReferenceList.Count() > 0)
             {
@@ -694,7 +702,7 @@ namespace BACKnetLutron.Services
                     bacnetValue.Add(new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_OBJECT_PROPERTY_REFERENCE,
                                existingProperty.Value));
                 }
-                 currentArrayIndex = existingListofPropertyReferenceList.Count() + 1;
+                currentArrayIndex = existingListofPropertyReferenceList.Count() + 1;
                 bacnetDevicePReference.ArrayIndex = currentArrayIndex;
                 bacnetDevicePReference.DeviceId = new BacnetObjectId(BacnetObjectTypes.OBJECT_DEVICE,
                     (uint)scheduleDetail.DeviceId);
@@ -715,7 +723,7 @@ namespace BACKnetLutron.Services
                (uint)scheduleDetail.InstanceId), newBacnetPropertyList, (byte)bacnetValue.Count);
 
 
-           
+
             }
             return currentArrayIndex;
         }
@@ -818,7 +826,7 @@ namespace BACKnetLutron.Services
             var currentArrayIndex = UpdateScheduleObjectPropertyReference(scheduleDetail, bacnetAddress, existScheduleDetail
                  , deviceDetail);
             //Update weekly schedule in data base.
-            UpdateScheduleWeekly(scheduleDetail, scheduleDetail.InstanceId, currentArrayIndex,existScheduleDetail);
+            UpdateScheduleWeekly(scheduleDetail, scheduleDetail.InstanceId, currentArrayIndex, existScheduleDetail);
 
 
         }
