@@ -1,4 +1,5 @@
-﻿<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.3\build\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props" Condition="Exists('..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.3\build\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.props')" />
   <Import Project="..\packages\Microsoft.Net.Compilers.1.3.2\build\Microsoft.Net.Compilers.props" Condition="Exists('..\packages\Microsoft.Net.Compilers.1.3.2\build\Microsoft.Net.Compilers.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
@@ -14,7 +15,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BACKnetLutron</RootNamespace>
     <AssemblyName>BACKnetLutron</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <UseIISExpress>true</UseIISExpress>
     <IISExpressSSLPort />
     <IISExpressAnonymousAuthentication />
@@ -23,6 +24,7 @@
     <UseGlobalApplicationHostFile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -58,6 +60,9 @@
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
+    <Reference Include="Flurl">
+      <HintPath>..\packages\NetBix\Flurl.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform, Version=1.0.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.1.0.3\lib\net45\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll</HintPath>
     </Reference>
@@ -79,6 +84,9 @@
     </Reference>
     <Reference Include="MVC.Utilities, Version=1.13.5.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\mvc-utilities.1.13.5.0\lib\net40\MVC.Utilities.dll</HintPath>
+    </Reference>
+    <Reference Include="NetBIX.oBIX.Client">
+      <HintPath>..\packages\NetBix\NetBIX.oBIX.Client.dll</HintPath>
     </Reference>
     <Reference Include="PacketDotNet, Version=0.13.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\PacketDotNet.0.13.0\lib\net\PacketDotNet.dll</HintPath>
@@ -172,6 +180,7 @@
     <Content Include="Content\fontawesome\font-awesome.min.css" />
     <Content Include="Content\Images\details_close.png" />
     <Content Include="Content\Images\details_open.png" />
+    <Content Include="Content\Script\Pages\JACEBacnet.js" />
     <Content Include="Content\Script\Pages\LutronLightFloor.js" />
     <Content Include="DataModal\ESDLutronEntities.Context.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
@@ -306,7 +315,9 @@
     <Content Include="Scripts\moment.js" />
     <Content Include="Scripts\moment.min.js" />
     <Content Include="Scripts\npm.js" />
-    <Content Include="Web.config" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="Views\BACnetLutron\LutronLightFloor.cshtml" />
   </ItemGroup>
   <ItemGroup>
@@ -327,6 +338,7 @@
     <Compile Include="BusinessEntities\LightsfloorEntity.cs" />
     <Compile Include="BusinessEntities\LutronFloorObjectType.cs" />
     <Compile Include="BusinessEntities\LutronObjectType.cs" />
+    <Compile Include="BusinessEntities\Obix\ObixEntity.cs" />
     <Compile Include="BusinessEntities\ObjectInstanceType.cs" />
     <Compile Include="BusinessEntities\ScheduleEntity.cs" />
     <Compile Include="BusinessEntities\ScheduleObjectListEntity.cs" />
@@ -334,6 +346,7 @@
     <Compile Include="BusinessEntities\WeeksEntity.cs" />
     <Compile Include="Controllers\BACnetLutronController.cs" />
     <Compile Include="Controllers\LutronLightFloorController.cs" />
+    <Compile Include="Controllers\ObixJACEBacnetController.cs" />
     <Compile Include="DataModal\BACnetDevice.cs">
       <DependentUpon>ESDLutronEntities.tt</DependentUpon>
     </Compile>
@@ -370,6 +383,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Init\Obix\ObixClientInit.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Repository\ILutronLightRepository.cs" />
     <Compile Include="Repository\LutronLightRepository.cs" />
@@ -384,6 +398,7 @@
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\web.config" />
     <Content Include="Scripts\jquery-1.10.2.min.map" />
+    <Content Include="Views\BACnetLutron\JACEBacnet.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

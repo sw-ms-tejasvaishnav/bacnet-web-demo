@@ -14,5 +14,12 @@ namespace BACKnetLutron.Controllers
             ViewBag.Title = "Home Page";
             return View();
         }
+
+
+        public ActionResult JACEBacnet()
+        {
+            ViewBag.Title = "Home Page";
+            return View();
+        }
     }
 }

@@ -10,7 +10,13 @@ using BACKnetLutron.Repository;
 using System.IO.BACnet.Serialize;
 using BACKnetLutron.BusinessEntities.Common_Constant;
 using AutoMapper;
-using static System.IO.BACnet.BacnetClient;
+using System.Configuration;
+using NetBIX.oBIX.Client.Framework;
+using System.Xml.Linq;
+using BACKnetLutron.Init.Obix;
+using System.Xml.Serialization;
+using BACKnetLutron.BusinessEntities.Obix;
+
 
 namespace BACKnetLutron.Services
 {
@@ -21,6 +27,7 @@ namespace BACKnetLutron.Services
         static BacnetClient bacNetClient;
         static BackNetDeviceModel bacNetDeviceModel = new BackNetDeviceModel();
         private ILutronLightRepository _LutronLightRepository;
+        public string obixHubURL = ConfigurationManager.AppSettings["ObixHubURL"];
         #endregion
 
         #region Counstructor
@@ -37,8 +44,8 @@ namespace BACKnetLutron.Services
         {
             //Start bacnet 
             StartBackNetService();
-            Thread.Sleep(1000);
-            AddBackNetDeviceDetail();
+            Thread.Sleep(5000);
+            //AddBackNetDeviceDetail();
             // bacNetClient.Dispose();
             // bacNetClient.Transport.Dispose();
             //// Bacnet on UDP/IP/Ethernet
@@ -235,7 +242,7 @@ namespace BACKnetLutron.Services
                 loBacnetPropertyValueList.Add(updateScheduleObjDetail);
                 #endregion
 
-                #region Adds Weekly Schedule                              
+                #region Adds Weekly Schedule
                 //// Add weekly schedule for object
                 var scheduleWeekalyValue = AddScheduleWeeklyDetail(scheduleDetail);
                 loBacnetPropertyValueList.Add(scheduleWeekalyValue);
@@ -290,12 +297,12 @@ namespace BACKnetLutron.Services
             {
                 BacnetIpUdpProtocolTransport newPort = new BacnetIpUdpProtocolTransport(0xBAC0, false);
                 bacNetClient = new BacnetClient(newPort);
-                bacNetClient.OnIam += new BacnetClient.IamHandler(Handler_OmIam);
-                bacNetClient.OnWhoIs += new BacnetClient.WhoIsHandler(handler_OnWhoIs);
+
                 //bacNetClient.Dispose();
                 //   Thread.Sleep(1000);
                 bacNetClient.Start();
-
+                bacNetClient.OnIam += new BacnetClient.IamHandler(Handler_OmIam);
+                bacNetClient.OnWhoIs += new BacnetClient.WhoIsHandler(handler_OnWhoIs);
 
                 bacNetClient.WhoIs();
             }
@@ -336,16 +343,22 @@ namespace BACKnetLutron.Services
                         });   //// add it
                     }
                 }
+
+                if(bacNetDeviceModel.BACnetDeviceList.Count == 48)
+                {
+                    AddBackNetDeviceDetail();
+                }
             }
         }
 
         /// <summary>
         /// Adds bacnet device details.
         /// </summary>
-        private void AddBackNetDeviceDetail()
+        private static void AddBackNetDeviceDetail()
         {
             if (bacNetDeviceModel != null && bacNetDeviceModel.BACnetDeviceList != null)
             {
+                LutronLightRepository lutronLightRepository = new LutronLightRepository();
                 List<BACnetDevice> bACnetDeviceLst = new List<BACnetDevice>();
                 List<BACnetDeviceMapping> bACnetDeviceMappingLst = new List<BACnetDeviceMapping>();
                 foreach (var deviceDetail in bacNetDeviceModel.BACnetDeviceList)
@@ -357,7 +370,7 @@ namespace BACKnetLutron.Services
                     foreach (var objValue in objValueLst)
                     {
 
-                        var isExistNetworkId = _LutronLightRepository.CheckIfExistNetworkAddress(deviceDetail.BacNetAddress.ToString(),
+                        var isExistNetworkId = lutronLightRepository.CheckIfExistNetworkAddress(deviceDetail.BacNetAddress.ToString(),
                             (int)((BacnetObjectId)objValue.Value).Instance, (int)deviceDetail.DeviceId
                             , ((BacnetObjectId)objValue.Value).Type.ToString());
                         if (isExistNetworkId == true)
@@ -369,18 +382,20 @@ namespace BACKnetLutron.Services
                             new BacnetObjectId((BacnetObjectTypes)((BacnetObjectId)objValue.Value).Type,
                             ((BacnetObjectId)objValue.Value).Instance),
                             BacnetPropertyIds.PROP_OBJECT_NAME, out objNameList);
-                        var bacNetdevice = new BACnetDevice
+                        if (deviceDetail.BacNetAddress.RoutedSource != null && deviceDetail.BacNetAddress.RoutedSource.net != null)
                         {
-                            device_id = Convert.ToInt32(deviceDetail.DeviceId),
-                            network_id = deviceDetail.BacNetAddress.ToString(),
-                            object_type = ((BacnetObjectId)objValue.Value).type.ToString(),
-                            object_instance = Convert.ToInt32(((BacnetObjectId)objValue.Value).Instance.ToString()),
-                            object_name = objNameList != null && objNameList.Count > 0 ? objNameList[0].Value.ToString() : null,
-                            routed_source = deviceDetail.BacNetAddress.RoutedSource.ToString(),
-                            routed_net = deviceDetail.BacNetAddress.RoutedSource.net
-                        };
-                        bACnetDeviceLst.Add(bacNetdevice);
-
+                            var bacNetdevice = new BACnetDevice
+                            {
+                                device_id = Convert.ToInt32(deviceDetail.DeviceId),
+                                network_id = deviceDetail.BacNetAddress.ToString(),
+                                object_type = ((BacnetObjectId)objValue.Value).type.ToString(),
+                                object_instance = Convert.ToInt32(((BacnetObjectId)objValue.Value).Instance.ToString()),
+                                object_name = objNameList != null && objNameList.Count > 0 ? objNameList[0].Value.ToString() : null,
+                                routed_source = deviceDetail.BacNetAddress.RoutedSource.ToString(),
+                                routed_net = deviceDetail.BacNetAddress.RoutedSource.net
+                            };
+                            bACnetDeviceLst.Add(bacNetdevice);
+                        }
                         int? suiteID = null, roomID = null;
                         var objName = Enum.GetName(typeof(LutronFloorObjectType), LutronFloorObjectType.OBJECT_ANALOG_VALUE).ToString();
                         if (((BacnetObjectId)objValue.Value).type.ToString().ToUpper() == objName)
@@ -411,11 +426,11 @@ namespace BACKnetLutron.Services
 
                 if (bACnetDeviceLst.Count() > 0)
                 {
-                    _LutronLightRepository.AddBacNetDeviceDetail(bACnetDeviceLst);
+                    lutronLightRepository.AddBacNetDeviceDetail(bACnetDeviceLst);
                 }
                 if (bACnetDeviceMappingLst.Count() > 0)
                 {
-                    _LutronLightRepository.AddBacNetMappingDetail(bACnetDeviceMappingLst);
+                    lutronLightRepository.AddBacNetMappingDetail(bACnetDeviceMappingLst);
                 }
             }
         }
@@ -909,6 +924,223 @@ namespace BACKnetLutron.Services
         }
         #endregion
 
+
+
+        public LightLevelEntity GetConfLightLevel(int? deviceID)
+        {
+            ESD_LutronEntities lutronEntities = new ESD_LutronEntities();
+            var bacnetDeviceFromDB = lutronEntities.BACnetDevices
+                                       .Where(x => x.device_id == deviceID
+                                           && x.object_instance == (int?)LutronObjectType.Lighting_Level)
+                                       .Select(x => x).FirstOrDefault();
+
+
+            IList<BacnetValue> bacnetValueList;
+            BacnetAddress bacnetAddress;
+            bacnetAddress = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceFromDB.network_id);
+
+            bacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceFromDB.routed_source,
+                (ushort)bacnetDeviceFromDB.routed_net);
+
+            bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_VALUE,
+                (uint)LutronObjectType.Lighting_Level), BacnetPropertyIds.PROP_PRESENT_VALUE, out bacnetValueList);
+
+            if (bacnetValueList != null && bacnetValueList.Count > 0)
+            {
+                return new LightLevelEntity { DeviceID = (Int32)deviceID, LightLevel = Convert.ToString(bacnetValueList.FirstOrDefault().Value)};
+            }
+            else
+            {
+                return new LightLevelEntity { DeviceID = (Int32)deviceID, LightLevel = string.Empty };
+            }
+        }
+
+        public LightStateEntity GetConfLightState(int? deviceID)
+        {
+            ESD_LutronEntities lutronEntities = new ESD_LutronEntities();
+            var bacnetDeviceFromDB = lutronEntities.BACnetDevices
+                                       .Where(x => x.device_id == deviceID
+                                            && x.object_instance == (int?)LutronObjectType.Lighting_State)
+                                       .Select(x => x).FirstOrDefault();
+
+
+            IList<BacnetValue> loBacnetValueList;
+            BacnetAddress loBacnetAddress;
+            loBacnetAddress = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceFromDB.network_id);
+
+            loBacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceFromDB.routed_source,
+                (ushort)bacnetDeviceFromDB.routed_net);
+
+            bacNetClient.ReadPropertyRequest(loBacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_BINARY_VALUE,
+                (uint)LutronObjectType.Lighting_State), BacnetPropertyIds.PROP_PRESENT_VALUE, out loBacnetValueList);
+
+            if (loBacnetValueList != null && loBacnetValueList.Count > 0)
+            {
+                return new LightStateEntity { DeviceID = (Int32)deviceID, LightState = Convert.ToBoolean(loBacnetValueList.FirstOrDefault().Value) };
+            }
+            else
+            {
+                return new LightStateEntity { DeviceID = (Int32)deviceID, LightState = null };
+            }
+        }
+
+
+        public LightSceneEntity GetConfLightingScene(int? deviceID)
+        {
+            LightSceneEntity lightSceneEntity = new LightSceneEntity();
+            ESD_LutronEntities lutronEntities = new ESD_LutronEntities();
+            var bacnetDeviceFromDB = lutronEntities.BACnetDevices
+                                       .Where(x => x.device_id == deviceID
+                                           && x.object_instance == (int?)LutronObjectType.Lighting_Scene)
+                                       .Select(x => x).FirstOrDefault();
+
+
+            IList<BacnetValue> bacnetValueList;
+            BacnetAddress bacnetAddress;
+            bacnetAddress = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceFromDB.network_id);
+
+            bacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceFromDB.routed_source,
+                (ushort)bacnetDeviceFromDB.routed_net);
+
+            bacNetClient.ReadPropertyRequest(bacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_MULTI_STATE_VALUE,
+                (uint)LutronObjectType.Lighting_Scene), BacnetPropertyIds.PROP_PRESENT_VALUE, out bacnetValueList);
+
+
+
+
+
+            ObixClientInit obixClientInit = new ObixClientInit();
+            ObixResult<XElement> xmlLevelResult = obixClientInit.oBixClient.ReadUriXml(new Uri(obixHubURL + "config/Drivers/BacnetNetwork/Lutron_Quantum/Conference%24204628A%24201761035/points/Basic/Scene/"));
+
+            IEnumerable<XNode> lighLevelLst = xmlLevelResult.Result.Document.DescendantNodes();
+            XElement lightLevelelement = lighLevelLst.LastOrDefault() as XElement;
+            if (lightLevelelement != null)
+            {
+                lightSceneEntity.LightScene = lightLevelelement.Attribute("val").Value;
+            }
+
+
+            if (bacnetValueList != null && bacnetValueList.Count > 0)
+            {
+                lightSceneEntity.Value = Convert.ToString(bacnetValueList.FirstOrDefault().Value);
+            }
+
+            lightSceneEntity.DeviceID = (Int32)deviceID;
+
+            return lightSceneEntity;
+        }
+
+        public LightLevelEntity SetConfLightLevel(LightLevelEntity lightLevelEntity)
+        {
+            ESD_LutronEntities lutronEntities = new ESD_LutronEntities();
+            var bacnetDeviceFromDB = lutronEntities.BACnetDevices
+                                       .Where(x => x.device_id == lightLevelEntity.DeviceID
+                                           && x.object_instance == (int?)LutronObjectType.Lighting_Level)
+                                       .Select(x => x).FirstOrDefault();
+
+            if(bacnetDeviceFromDB != null && bacnetDeviceFromDB.bacnet_device_id > 0)
+            {
+                BacnetAddress bacnetAddress = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceFromDB.network_id);
+                bacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceFromDB.routed_source,
+                    (ushort)bacnetDeviceFromDB.routed_net);
+
+
+                BacnetValue newLightLevel = new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_REAL, Convert.ToSingle(lightLevelEntity.LightLevel));
+                BacnetValue[] writeNewLightLevel = { newLightLevel };
+
+                bacNetClient.WritePropertyRequest(bacnetAddress,
+                    new BacnetObjectId(BacnetObjectTypes.OBJECT_ANALOG_VALUE, (uint)LutronObjectType.Lighting_Level),
+                    BacnetPropertyIds.PROP_PRESENT_VALUE, writeNewLightLevel);
+
+                //if (bacnetValueList != null && bacnetValueList.Count > 0)
+                //{
+                //    return new LightLevelEntity { DeviceID = (Int32)deviceID, LightLevel = Convert.ToString(bacnetValueList.FirstOrDefault().Value) };
+                //}
+                //else
+                //{
+                //    return new LightLevelEntity { DeviceID = (Int32)deviceID, LightLevel = string.Empty };
+                //}
+
+
+
+                //BacnetAddress loBacnetAddress = new BacnetAddress(BacnetAddressTypes.IP, loBACnetDeviceDetail.network_id);
+                //loBacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, loBACnetDeviceDetail.routed_source, (ushort)loBACnetDeviceDetail.routed_net);
+
+                //IList<BacnetValue> loBacnetValueList;
+                //moBacnetClient.ReadPropertyRequest(loBacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_BINARY_VALUE, (uint)loBACnetDeviceDetail.object_instance), BacnetPropertyIds.PROP_PRESENT_VALUE, out loBacnetValueList);
+
+
+                //BacnetValue newLightLevel = new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, fbToggleStatus == true ? 1 : 0);
+                //BacnetValue[] writeNewLightLevel = { newLightLevel };
+
+                //moBacnetClient.WritePropertyRequest(loBacnetAddress, new BacnetObjectId(BacnetObjectTypes.OBJECT_BINARY_VALUE, (uint)loBACnetDeviceDetail.object_instance), BacnetPropertyIds.PROP_PRESENT_VALUE, writeNewLightLevel);
+
+
+            }
+
+
+
+            return GetConfLightLevel(lightLevelEntity.DeviceID);
+        }
+
+
+        public LightSceneEntity SetConfLightScene(LightSceneEntity lightSceneEntity)
+        {
+            ESD_LutronEntities lutronEntities = new ESD_LutronEntities();
+            var bacnetDeviceFromDB = lutronEntities.BACnetDevices
+                                       .Where(x => x.device_id == lightSceneEntity.DeviceID
+                                           && x.object_instance == (int?)LutronObjectType.Lighting_Scene)
+                                       .Select(x => x).FirstOrDefault();
+
+            if (bacnetDeviceFromDB != null && bacnetDeviceFromDB.bacnet_device_id > 0)
+            {
+                BacnetAddress bacnetAddress = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceFromDB.network_id);
+                bacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceFromDB.routed_source,
+                    (ushort)bacnetDeviceFromDB.routed_net);
+
+
+                BacnetValue newLightScene = new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_UNSIGNED_INT, Convert.ToUInt32(lightSceneEntity.Value));
+                BacnetValue[] writeNewLightScene = { newLightScene };
+
+                bacNetClient.WritePropertyRequest(bacnetAddress,
+                    new BacnetObjectId(BacnetObjectTypes.OBJECT_MULTI_STATE_VALUE, (uint)LutronObjectType.Lighting_Scene),
+                    BacnetPropertyIds.PROP_PRESENT_VALUE, writeNewLightScene);
+
+            }
+
+            Thread.Sleep(1000);
+
+            return GetConfLightingScene(lightSceneEntity.DeviceID);
+        }
+
+        public LightStateEntity SetConfLightState(LightStateEntity lightStateEntity)
+        {
+            ESD_LutronEntities lutronEntities = new ESD_LutronEntities();
+            var bacnetDeviceFromDB = lutronEntities.BACnetDevices
+                                       .Where(x => x.device_id == lightStateEntity.DeviceID
+                                           && x.object_instance == (int?)LutronObjectType.Lighting_State)
+                                       .Select(x => x).FirstOrDefault();
+
+            if (bacnetDeviceFromDB != null && bacnetDeviceFromDB.bacnet_device_id > 0)
+            {
+                BacnetAddress bacnetAddress = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceFromDB.network_id);
+                bacnetAddress.RoutedSource = new BacnetAddress(BacnetAddressTypes.IP, bacnetDeviceFromDB.routed_source,
+                    (ushort)bacnetDeviceFromDB.routed_net);
+
+
+                BacnetValue newLightState = new BacnetValue(BacnetApplicationTags.BACNET_APPLICATION_TAG_ENUMERATED, lightStateEntity.LightState == true ? 1 : 0);
+                BacnetValue[] writeNewLightState = { newLightState };
+
+                bacNetClient.WritePropertyRequest(bacnetAddress,
+                    new BacnetObjectId(BacnetObjectTypes.OBJECT_BINARY_VALUE, (uint)LutronObjectType.Lighting_State),
+                    BacnetPropertyIds.PROP_PRESENT_VALUE, writeNewLightState);
+
+            }
+
+            Thread.Sleep(1000);
+
+            return GetConfLightState(lightStateEntity.DeviceID);
+        }
     }
 
 }

@@ -1,4 +1,5 @@
 ﻿using BACKnetLutron.BusinessEntities;
+using BACKnetLutron.BusinessEntities.Obix;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -85,8 +86,15 @@ namespace BACKnetLutron.Services
         /// <returns></returns>
         ScheduleEntity GetsScheduleInfo(int deviceId, int instanceId);
 
-        
+        LightLevelEntity GetConfLightLevel(int? DeviceID);
 
+        LightStateEntity GetConfLightState(int? DeviceID);
 
+        LightSceneEntity GetConfLightingScene(int? DeviceID);
+
+        LightLevelEntity SetConfLightLevel(LightLevelEntity lightSceneEntity);
+        LightSceneEntity SetConfLightScene(LightSceneEntity lightSceneEntity);
+
+        LightStateEntity SetConfLightState(LightStateEntity lightStateEntity);
     }
 }
