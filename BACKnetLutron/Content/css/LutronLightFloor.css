@@ -41,6 +41,11 @@
     padding: 3px;
     padding-left: 0px;
 }
+
+.panel-height {
+    height:120px;
+}
+
 .wd142px {
     width: 116px !important;
 }

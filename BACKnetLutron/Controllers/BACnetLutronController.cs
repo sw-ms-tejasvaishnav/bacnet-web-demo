@@ -21,5 +21,11 @@ namespace BACKnetLutron.Controllers
             ViewBag.Title = "Home Page";
             return View();
         }
+
+        public ActionResult LutronLightFloorNew()
+        {
+            ViewBag.Title = "Home Page";
+            return View();
+        }
     }
 }

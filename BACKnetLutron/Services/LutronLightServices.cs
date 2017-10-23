@@ -449,11 +449,11 @@ namespace BACKnetLutron.Services
             else if (high_limit != -1 && 1 > high_limit)
                 return;
 
-            int? alaramEnrollmentVal = _LutronLightRepository.GetAlaramEnrollment();
-            if (alaramEnrollmentVal != null)
-            {
-                sender.Iam((uint)alaramEnrollmentVal, new BacnetSegmentations());
-            }
+            //int? alaramEnrollmentVal = _LutronLightRepository.GetAlaramEnrollment();
+            //if (alaramEnrollmentVal != null)
+            //{
+            //    sender.Iam((uint)alaramEnrollmentVal, new BacnetSegmentations());
+            //}
         }
 
         #region Floor lights on/off.

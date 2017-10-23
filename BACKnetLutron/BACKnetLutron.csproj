@@ -16,7 +16,7 @@
     <RootNamespace>BACKnetLutron</RootNamespace>
     <AssemblyName>BACKnetLutron</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <UseIISExpress>true</UseIISExpress>
+    <UseIISExpress>false</UseIISExpress>
     <IISExpressSSLPort />
     <IISExpressAnonymousAuthentication />
     <IISExpressWindowsAuthentication />
@@ -25,6 +25,7 @@
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <TargetFrameworkProfile />
+    <Use64BitIISExpress />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -163,6 +164,7 @@
     <Content Include="Content\bootstrap-datetimepicker.min.css" />
     <Content Include="Content\bootstrap-theme.css" />
     <Content Include="Content\bootstrap-theme.min.css" />
+    <Content Include="Content\bootstrap-toggle.min.css" />
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\css\bootstrap.css" />
@@ -192,9 +194,12 @@
       <DependentUpon>ESDLutronEntities.edmx</DependentUpon>
       <LastGenOutput>ESDLutronEntities.cs</LastGenOutput>
     </Content>
+    <Content Include="DLL\Flurl.dll" />
+    <Content Include="DLL\NetBIX.oBIX.Client.dll" />
     <Content Include="Global.asax" />
     <Content Include="Scripts\bootstrap-datetimepicker.js" />
     <Content Include="Scripts\bootstrap-datetimepicker.min.js" />
+    <Content Include="Scripts\bootstrap-toggle.min.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <EntityDeploy Include="DataModal\ESDLutronEntities.edmx">
@@ -399,6 +404,7 @@
     <Content Include="Views\web.config" />
     <Content Include="Scripts\jquery-1.10.2.min.map" />
     <Content Include="Views\BACnetLutron\JACEBacnet.cshtml" />
+    <Content Include="Views\BACnetLutron\LutronLightFloorNew.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -428,7 +434,7 @@
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>49531</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost:49531/</IISUrl>
+          <IISUrl>http://localhost/BACKnetLutron</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>

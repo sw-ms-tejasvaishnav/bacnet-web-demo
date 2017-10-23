@@ -16,7 +16,7 @@ namespace BACKnetLutron
             routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",
-                defaults: new { Controller = "BACnetLutron", action = "JACEBacnet", id = UrlParameter.Optional }
+                defaults: new { Controller = "BACnetLutron", action = "LutronLightFloorNew", id = UrlParameter.Optional }
             );
         }
     }

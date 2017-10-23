@@ -9,7 +9,6 @@ var currentDeviceIdForWeeklySchedule = 0;
 var frmNewSchedule;
 var tblCall = 0;
 $(document).ready(function () {
-    debugger;
     $('#scheduleStartDate').datetimepicker({
         format: 'MM-DD-YYYY'
     });
