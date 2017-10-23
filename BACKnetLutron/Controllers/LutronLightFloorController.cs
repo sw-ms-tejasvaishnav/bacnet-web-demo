@@ -1,4 +1,6 @@
 ﻿using BACKnetLutron.BusinessEntities;
+using BACKnetLutron.BusinessEntities.Common_Constant;
+using BACKnetLutron.BusinessEntities.Obix;
 using BACKnetLutron.Services;
 using System;
 using System.Collections.Generic;
@@ -71,6 +73,68 @@ namespace BACKnetLutron.Controllers
             var deviceLst = _LutronLightFloorServices.GetDevices();
             return Ok(deviceLst);
         }
+
+        #region LutronLightFloorNew
+
+        [HttpGet]
+        [Route("GetDeviceDetails/{deviceId:int}")]
+        public IHttpActionResult GetDeviceDetails(int deviceId)
+        {
+            var lightScene = _LutronLightFloorServices.GetConfLightingScene(deviceId);
+            var lightState = _LutronLightFloorServices.GetConfLightState(deviceId);
+            var lightLevel = _LutronLightFloorServices.GetConfLightLevel(deviceId);
+
+            var deviceDetail = new DeviceDetailEnity
+            {
+                DeviceID = lightScene.DeviceID,
+                LightScene = lightScene.LightScene,
+                LightSceneValue = lightScene.Value,
+                LightLevel = lightLevel.LightLevel,
+                LightState = lightState.LightState
+            };
+            return Ok(deviceDetail);
+        }
+
+        [HttpPost]
+        [Route("SetLightingScene")]
+        public IHttpActionResult SetLightingScene(LightSceneEntity lightscene)
+        {
+            LightSceneEntity lightScenetemp = new LightSceneEntity();
+            lightscene.Value = EnumConstants.GetEnumValueFromDescription<LightSceneEnum>(lightscene.LightScene).ToString();
+            var lightScene = _LutronLightFloorServices.SetConfLightScene(lightscene);
+            var lightLevel = _LutronLightFloorServices.GetConfLightLevel(lightscene.DeviceID);
+            var deviceDetail = new DeviceDetailEnity
+            {
+                DeviceID = lightScene.DeviceID,
+                LightScene = lightScene.LightScene,
+                LightSceneValue = lightScene.Value,
+                LightLevel = lightLevel.LightLevel,
+                //LightState = lightState.LightState
+            };
+            return Ok(deviceDetail);
+        }
+
+        [HttpPost]
+        [Route("SetLightingLevel")]
+        public IHttpActionResult SetLightingLevel(LightLevelEntity lightLevel)
+        {
+            LightSceneEntity lightScenetemp = new LightSceneEntity();
+            var deviceLightLevel = _LutronLightFloorServices.SetConfLightLevel(lightLevel);
+            var lightScene = _LutronLightFloorServices.GetConfLightingScene(lightLevel.DeviceID);
+            var deviceDetail = new DeviceDetailEnity
+            {
+                DeviceID = lightScene.DeviceID,
+                LightScene = lightScene.LightScene,
+                LightSceneValue = lightScene.Value,
+                LightLevel = deviceLightLevel.LightLevel,
+                //LightState = lightState.LightState
+            };
+            return Ok(deviceDetail);
+        }
+
+
+
+        #endregion
 
         /// <summary>
         /// Gets device object names base on device id.

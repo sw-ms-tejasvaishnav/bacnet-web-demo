@@ -23,4 +23,13 @@ namespace BACKnetLutron.BusinessEntities.Obix
         public string LightScene { get; set; }
         public string Value { get; set; }
     }
+
+    public class DeviceDetailEnity
+    {
+        public Int32 DeviceID { get; set; }
+        public string LightLevel { get; set; }
+        public bool? LightState { get; set; }
+        public string LightScene { get; set; }
+        public string LightSceneValue { get; set; }
+    }
 }

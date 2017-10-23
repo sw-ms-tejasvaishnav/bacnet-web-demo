@@ -924,8 +924,6 @@ namespace BACKnetLutron.Services
         }
         #endregion
 
-
-
         public LightLevelEntity GetConfLightLevel(int? deviceID)
         {
             ESD_LutronEntities lutronEntities = new ESD_LutronEntities();
