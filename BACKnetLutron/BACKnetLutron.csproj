@@ -16,7 +16,7 @@
     <RootNamespace>BACKnetLutron</RootNamespace>
     <AssemblyName>BACKnetLutron</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <UseIISExpress>false</UseIISExpress>
+    <UseIISExpress>true</UseIISExpress>
     <IISExpressSSLPort />
     <IISExpressAnonymousAuthentication />
     <IISExpressWindowsAuthentication />
@@ -184,6 +184,7 @@
     <Content Include="Content\Images\details_open.png" />
     <Content Include="Content\Script\Pages\JACEBacnet.js" />
     <Content Include="Content\Script\Pages\LutronLightFloor.js" />
+    <Content Include="Content\Script\Pages\LutronLightFloorNew.js" />
     <Content Include="DataModal\ESDLutronEntities.Context.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>ESDLutronEntities.Context.cs</LastGenOutput>
@@ -337,6 +338,7 @@
     <Compile Include="BusinessEntities\BackNetDeviceEntity.cs" />
     <Compile Include="BusinessEntities\BacNetScheduleObject.cs" />
     <Compile Include="BusinessEntities\Common Constant\CommonConstant.cs" />
+    <Compile Include="BusinessEntities\Common Constant\EnumConstants.cs" />
     <Compile Include="BusinessEntities\DeviceEntity.cs" />
     <Compile Include="BusinessEntities\FloorEntity.cs" />
     <Compile Include="BusinessEntities\FloorType.cs" />
@@ -434,7 +436,7 @@
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>49531</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost/BACKnetLutron</IISUrl>
+          <IISUrl>http://localhost:49531/</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>
